@@ -1,34 +1,48 @@
 from flask import Flask
+from flask import request
+from flask import Response
 
-# print a nice greeting.
-def say_hello(username = "World"):
-    return '<p>Hello %s!</p>\n' % username
+from datetime import datetime
 
-# some bits of text for the page.
-header_text = '''
-    <html>\n<head> <title>EB Flask Test</title> </head>\n<body>'''
-instructions = '''
-    <p><em>Hint</em>: This is a RESTful web service! Append a username
-    to the URL (for example: <code>/Thelonious</code>) to say hello to
-    someone specific.</p>\n'''
-home_link = '<p><a href="/">Back</a></p>\n'
-footer_text = '</body>\n</html>'
+import db
 
-# EB looks for an 'application' callable by default.
-application = Flask(__name__)
+import json
+import os
 
-# add a rule for the index page.
-application.add_url_rule('/', 'index', (lambda: header_text +
-    say_hello() + instructions + footer_text))
+telegram_bot_token = os.environ["TELEGRAM_BOT_TOKEN"]
 
-# add a rule when the page is accessed with a name appended to the site
-# URL.
-application.add_url_rule('/<username>', 'hello', (lambda username:
-    header_text + say_hello(username) + home_link + footer_text))
+app = Flask(__name__)
 
-# run the app.
+global_chat_id = -219063945
+
+
+@app.route("/")
+def index():
+    return Response(json.dumps(db.list_players(chat_id=global_chat_id)))
+
+
+@app.route("/bot/" + telegram_bot_token + "/update", methods=["POST"])
+def update():
+    global global_chat_id
+
+    data = request.get_json()
+
+    message = data["message"]
+    text = message["text"]
+    chat_id = message["chat"]["id"]
+    created_at = datetime.fromtimestamp(message["date"])
+    user = message["from"]
+
+    if text == "/new@sports_manager_bot":
+        db.new_game(chat_id, created_at)
+    elif text == "/plus@sports_manager_bot":
+        db.plus(user, chat_id, created_at)
+    elif text == "/list@sports_manager_bot":
+        global_chat_id = chat_id
+
+    return Response(status=200)
+
+
 if __name__ == "__main__":
-    # Setting debug to True enables debug output. This line should be
-    # removed before deploying a production app.
-    application.debug = True
-    application.run()
+    app.debug = True
+    app.run()

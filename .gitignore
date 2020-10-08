@@ -109,3 +109,4 @@ venv.bak/
 !.elasticbeanstalk/*.global.yml
 
 .vscode
+run.sh

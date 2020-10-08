@@ -1,4 +1,7 @@
+.elasticbeanstalk
 .git
 .gitignore
 .venv
 .vscode
+__pycache__
+run.sh
