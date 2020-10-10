@@ -2,18 +2,6 @@ CREATE DATABASE IF NOT EXISTS sports_manager;
 
 USE sports_manager;
 
-CREATE TABLE IF NOT EXISTS `match` (
-	id INT UNSIGNED
-		NOT NULL
-        PRIMARY KEY
-        AUTO_INCREMENT,
-	chat_id BIGINT
-		NOT NULL,
-	created_at DATETIME
-		NOT NULL,
-	CONSTRAINT UNIQUE KEY (chat_id, created_at)
-);
-
 CREATE TABLE IF NOT EXISTS `user` (
 	id BIGINT
 		NOT NULL
@@ -29,6 +17,22 @@ CREATE TABLE IF NOT EXISTS `user` (
 		NOT NULL,
 	updated_at DATETIME
 		NULL
+);
+
+CREATE TABLE IF NOT EXISTS `match` (
+	id INT UNSIGNED
+		NOT NULL
+        PRIMARY KEY
+        AUTO_INCREMENT,
+	chat_id BIGINT
+		NOT NULL,
+	created_at DATETIME
+		NOT NULL,
+	owner_id BIGINT
+		NOT NULL,
+	CONSTRAINT UNIQUE KEY (chat_id, created_at),
+    CONSTRAINT FOREIGN KEY (owner_id)
+		REFERENCES `user` (id)
 );
 
 CREATE TABLE IF NOT EXISTS `match_player` (

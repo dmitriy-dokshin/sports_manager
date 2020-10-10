@@ -17,19 +17,6 @@ def connect():
     return mysql.connector.connect(**config)
 
 
-def new_game(chat_id, created_at):
-    cnx = connect()
-    cursor = cnx.cursor()
-    try:
-        script = "INSERT INTO `match` (chat_id, created_at) VALUES (%(chat_id)s, %(created_at)s)"
-        data = {"chat_id": chat_id, "created_at": created_at}
-        cursor.execute(script, data)
-        cnx.commit()
-    finally:
-        cursor.close()
-        cnx.close()
-
-
 with open("db_scripts/add_or_update_user.sql") as f:
     add_or_update_user_script = f.read()
 
@@ -38,11 +25,32 @@ def add_or_update_user(cursor, user, created_at):
     data = {
         "id": user["id"],
         "username": user["username"],
-        "first_name": user["first_name"],
-        "last_name": user["last_name"],
+        "first_name": user.get("first_name"),
+        "last_name": user.get("last_name"),
         "created_at": created_at
     }
     cursor.execute(add_or_update_user_script, data)
+
+
+def new_game(user, chat_id, created_at):
+    cnx = connect()
+    cursor = cnx.cursor()
+    try:
+        add_or_update_user(cursor, user, created_at)
+        script = (
+            "INSERT INTO `match` (chat_id, created_at, owner_id)\n"
+            "VALUES (%(chat_id)s, %(created_at)s, %(owner_id)s)"
+        )
+        data = {
+            "chat_id": chat_id,
+            "created_at": created_at,
+            "owner_id": user["id"]
+        }
+        cursor.execute(script, data)
+        cnx.commit()
+    finally:
+        cursor.close()
+        cnx.close()
 
 
 with open("db_scripts/plus.sql") as f:
@@ -62,6 +70,26 @@ def plus(user, chat_id, created_at, number_of_people=1, paid=False):
             "paid": paid
         }
         cursor.execute(plus_script, data)
+        cnx.commit()
+    finally:
+        cursor.close()
+        cnx.close()
+
+
+with open("db_scripts/minus.sql") as f:
+    minus_script = f.read()
+
+
+def minus(user, chat_id, created_at):
+    cnx = connect()
+    cursor = cnx.cursor()
+    try:
+        data = {
+            "chat_id": chat_id,
+            "player_id": user["id"],
+            "deleted_at": created_at
+        }
+        cursor.execute(minus_script, data)
         cnx.commit()
     finally:
         cursor.close()

@@ -6,5 +6,6 @@ ORDER BY created_at DESC
 LIMIT 1
 ON DUPLICATE KEY UPDATE
 	updated_at=%(created_at)s,
+    deleted_at=NULL,
     number_of_people=%(number_of_people)s,
     paid=%(paid)s;

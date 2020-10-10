@@ -2,16 +2,17 @@ SELECT
     u.username,
     u.first_name,
     u.last_name,
-    mp.number_of_people,
-    mp.paid
-FROM match_player AS mp
+    p.number_of_people,
+    p.paid
+FROM match_player AS p
 JOIN user AS u
-	ON mp.player_id = u.id
-WHERE match_id = (
+	ON p.player_id = u.id
+WHERE p.match_id = (
     SELECT id
     FROM `match`
     WHERE chat_id = %(chat_id)s
     ORDER BY created_at DESC
     LIMIT 1
 )
-ORDER BY mp.created_at DESC;
+AND p.deleted_at IS NULL
+ORDER BY p.created_at DESC;
