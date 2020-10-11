@@ -3,8 +3,8 @@ from flask import request
 from flask import Response
 
 from datetime import datetime
+from db import Db
 
-import db
 import telegram_api
 
 import json
@@ -13,6 +13,8 @@ import os
 telegram_bot_token = os.environ["TELEGRAM_BOT_TOKEN"]
 
 app = Flask(__name__)
+
+db = Db()
 
 updates = []
 

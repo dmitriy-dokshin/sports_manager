@@ -1,112 +1,98 @@
 import mysql.connector
 import os
 
-rds_hostname = os.environ["RDS_HOSTNAME"]
-db_admin_password = os.environ["DB_ADMIN_PASSWORD"]
 
-config = {
-    "user": "admin",
-    "password": db_admin_password,
-    "host": rds_hostname,
-    "database": "sports_manager",
-    "raise_on_warnings": True
-}
-
-
-def connect():
-    return mysql.connector.connect(**config)
-
-
-with open("db_scripts/add_or_update_user.sql") as f:
-    add_or_update_user_script = f.read()
-
-
-def add_or_update_user(cursor, user, created_at):
-    data = {
-        "id": user["id"],
-        "username": user["username"],
-        "first_name": user.get("first_name"),
-        "last_name": user.get("last_name"),
-        "created_at": created_at
-    }
-    cursor.execute(add_or_update_user_script, data)
-
-
-def new_game(user, chat_id, created_at):
-    cnx = connect()
-    cursor = cnx.cursor()
-    try:
-        add_or_update_user(cursor, user, created_at)
-        script = (
-            "INSERT INTO `match` (chat_id, created_at, owner_id)\n"
-            "VALUES (%(chat_id)s, %(created_at)s, %(owner_id)s)"
-        )
-        data = {
-            "chat_id": chat_id,
-            "created_at": created_at,
-            "owner_id": user["id"]
+class Db:
+    def __init__(self):
+        self.__config = {
+            "user": "admin",
+            "password": os.environ["DB_ADMIN_PASSWORD"],
+            "host": os.environ["RDS_HOSTNAME"],
+            "database": "sports_manager",
+            "raise_on_warnings": True
         }
-        cursor.execute(script, data)
-        cnx.commit()
-    finally:
-        cursor.close()
-        cnx.close()
+        with open("db_scripts/add_or_update_user.sql") as f:
+            self.__add_or_update_user_script = f.read()
+        with open("db_scripts/plus.sql") as f:
+            self.__plus_script = f.read()
+        with open("db_scripts/minus.sql") as f:
+            self.__minus_script = f.read()
+        with open("db_scripts/list_players.sql") as f:
+            self.__list_players_script = f.read()
 
+    def __execute(self, callbacks, cursor_args={}):
+        cnx = mysql.connector.connect(**self.__config)
+        cursor = cnx.cursor(**cursor_args)
+        try:
+            for x in callbacks:
+                x(cnx, cursor)
+        finally:
+            cursor.close()
+            cnx.close()
 
-with open("db_scripts/plus.sql") as f:
-    plus_script = f.read()
-
-
-def plus(user, chat_id, created_at, number_of_people=1, paid=False):
-    cnx = connect()
-    cursor = cnx.cursor()
-    try:
-        add_or_update_user(cursor, user, created_at)
+    def __add_or_update_user(self, cursor, user, created_at):
         data = {
-            "chat_id": chat_id,
-            "player_id": user["id"],
-            "created_at": created_at,
-            "number_of_people": number_of_people,
-            "paid": paid
+            "id": user["id"],
+            "username": user["username"],
+            "first_name": user.get("first_name"),
+            "last_name": user.get("last_name"),
+            "created_at": created_at
         }
-        cursor.execute(plus_script, data)
-        cnx.commit()
-    finally:
-        cursor.close()
-        cnx.close()
+        cursor.execute(self.__add_or_update_user_script, data)
 
+    def new_game(self, user, chat_id, created_at):
+        def callback(cnx, cursor):
+            self.__add_or_update_user(cursor, user, created_at)
+            script = (
+                "INSERT INTO `match` (chat_id, created_at, owner_id)\n"
+                "VALUES (%(chat_id)s, %(created_at)s, %(owner_id)s)"
+            )
+            data = {
+                "chat_id": chat_id,
+                "created_at": created_at,
+                "owner_id": user["id"]
 
-with open("db_scripts/minus.sql") as f:
-    minus_script = f.read()
+            }
+            cursor.execute(script, data)
+            cnx.commit()
 
+        self.__execute([callback])
 
-def minus(user, chat_id, created_at):
-    cnx = connect()
-    cursor = cnx.cursor()
-    try:
-        data = {
-            "chat_id": chat_id,
-            "player_id": user["id"],
-            "deleted_at": created_at
-        }
-        cursor.execute(minus_script, data)
-        cnx.commit()
-    finally:
-        cursor.close()
-        cnx.close()
+    def plus(self, user, chat_id, created_at, number_of_people=1, paid=False):
+        def callback(cnx, cursor):
+            self.__add_or_update_user(cursor, user, created_at)
+            data = {
+                "chat_id": chat_id,
+                "player_id": user["id"],
+                "created_at": created_at,
+                "number_of_people": number_of_people,
+                "paid": paid
+            }
+            cursor.execute(self.__plus_script, data)
+            cnx.commit()
 
+        self.__execute([callback])
 
-with open("db_scripts/list_players.sql") as f:
-    list_players_script = f.read()
+    def minus(self, user, chat_id, created_at):
+        def callback(cnx, cursor):
+            data = {
+                "chat_id": chat_id,
+                "player_id": user["id"],
+                "deleted_at": created_at
+            }
+            cursor.execute(self.__minus_script, data)
+            cnx.commit()
 
+        self.__execute([callback])
 
-def list_players(chat_id):
-    cnx = connect()
-    cursor = cnx.cursor(dictionary=True)
-    try:
-        data = {"chat_id": chat_id}
-        cursor.execute(list_players_script, data)
-        return list(cursor.fetchall())
-    finally:
-        cursor.close()
-        cnx.close()
+    def list_players(self, chat_id):
+        result = []
+
+        def callback(cnx, cursor):
+            data = {"chat_id": chat_id}
+            cursor.execute(self.__list_players_script, data)
+            result.extend(cursor.fetchall())
+
+        self.__execute([callback], cursor_args={"dictionary": True})
+
+        return result
