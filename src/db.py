@@ -19,8 +19,10 @@ class Db:
             self.__minus_script = f.read()
         with open("db_scripts/list_players.sql") as f:
             self.__list_players_script = f.read()
+        with open("db_scripts/find_last_match.sql") as f:
+            self.__find_last_match_script = f.read()
 
-    def __execute(self, callbacks, cursor_args={}):
+    def __execute(self, callbacks, cursor_args={"dictionary": True}):
         cnx = mysql.connector.connect(**self.__config)
         cursor = cnx.cursor(**cursor_args)
         try:
@@ -39,6 +41,12 @@ class Db:
             "created_at": created_at
         }
         cursor.execute(self.__add_or_update_user_script, data)
+
+    def __find_last_match(self, cursor, chat_id):
+        cursor.execute(self.__find_last_match_script, {"chat_id": chat_id})
+        for x in cursor:
+            return x["id"]
+        return None
 
     def new_game(self, user, chat_id, created_at):
         def callback(cnx, cursor):
@@ -60,28 +68,32 @@ class Db:
 
     def plus(self, user, chat_id, created_at, number_of_people=None, paid=False):
         def callback(cnx, cursor):
-            self.__add_or_update_user(cursor, user, created_at)
-            data = {
-                "chat_id": chat_id,
-                "player_id": user["id"],
-                "created_at": created_at,
-                "number_of_people": number_of_people,
-                "paid": paid
-            }
-            cursor.execute(self.__plus_script, data)
-            cnx.commit()
+            match_id = self.__find_last_match(cursor, chat_id)
+            if match_id:
+                self.__add_or_update_user(cursor, user, created_at)
+                data = {
+                    "match_id": match_id,
+                    "player_id": user["id"],
+                    "created_at": created_at,
+                    "number_of_people": number_of_people,
+                    "paid": paid
+                }
+                cursor.execute(self.__plus_script, data)
+                cnx.commit()
 
         self.__execute([callback])
 
     def minus(self, user, chat_id, deleted_at):
         def callback(cnx, cursor):
-            data = {
-                "chat_id": chat_id,
-                "player_id": user["id"],
-                "deleted_at": deleted_at
-            }
-            cursor.execute(self.__minus_script, data)
-            cnx.commit()
+            match_id = self.__find_last_match(cursor, chat_id)
+            if match_id:
+                data = {
+                    "match_id": match_id,
+                    "player_id": user["id"],
+                    "deleted_at": deleted_at
+                }
+                cursor.execute(self.__minus_script, data)
+                cnx.commit()
 
         self.__execute([callback])
 
@@ -89,10 +101,12 @@ class Db:
         result = []
 
         def callback(cnx, cursor):
-            data = {"chat_id": chat_id}
-            cursor.execute(self.__list_players_script, data)
-            result.extend(cursor.fetchall())
+            match_id = self.__find_last_match(cursor, chat_id)
+            if match_id:
+                data = {"match_id": match_id}
+                cursor.execute(self.__list_players_script, data)
+                result.extend(cursor.fetchall())
 
-        self.__execute([callback], cursor_args={"dictionary": True})
+        self.__execute([callback])
 
         return result

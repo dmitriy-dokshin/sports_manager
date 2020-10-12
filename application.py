@@ -12,9 +12,13 @@ telegram_app = TelegramApp()
 telegram_bot_token = os.environ["TELEGRAM_BOT_TOKEN"]
 
 
-@app.route("/")
+@app.route("/" + telegram_bot_token)
 def index():
-    return Response(json.dumps(telegram_app.updates), content_type="application/json")
+    data = {
+        "all_updates": telegram_app.all_updates,
+        "except_updates": telegram_app.except_updates
+    }
+    return Response(json.dumps(data), content_type="application/json")
 
 
 @app.route("/bot/" + telegram_bot_token + "/update", methods=["POST"])

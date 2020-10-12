@@ -30,8 +30,11 @@ class TelegramUpdate:
 
 class TelegramApp:
     def __init__(self):
-        self.updates = []
-        self.__updates_lock = threading.Lock()
+        self.all_updates = []
+        self.__all_updates_lock = threading.Lock()
+        self.except_updates = []
+        self.__except_updates_lock = threading.Lock()
+
         self.__db = Db()
         self.__telegram_api = TelegramApi()
         telegram_bot_name = os.environ["TELEGRAM_BOT_NAME"]
@@ -48,13 +51,17 @@ class TelegramApp:
             self.__on_update[command + "@" + telegram_bot_name] = handler
 
     def update(self, data):
-        with self.__updates_lock:
-            self.updates.append(data)
-        update = TelegramUpdate(data)
-        if update.bot_command:
-            handler = self.__on_update.get(update.bot_command)
-            if handler:
-                handler(update)
+        with self.__all_updates_lock:
+            self.all_updates.append(data)
+        try:
+            update = TelegramUpdate(data)
+            if update.bot_command:
+                handler = self.__on_update.get(update.bot_command)
+                if handler:
+                    handler(update)
+        except:
+            with self.__except_updates_lock:
+                self.except_updates.append(data)
 
     def __new_game(self, update):
         self.__db.new_game(update.user, update.chat_id, update.date)
