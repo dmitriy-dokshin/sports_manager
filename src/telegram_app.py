@@ -2,6 +2,7 @@ from src.db import Db
 from src.telegram_api import TelegramApi
 from src.util import try_parse_int
 
+from collections import deque
 from datetime import datetime
 
 import os
@@ -34,9 +35,9 @@ class TelegramUpdate:
 
 class TelegramApp:
     def __init__(self):
-        self.all_updates = []
+        self.all_updates = deque(maxlen=512)
         self.__all_updates_lock = threading.Lock()
-        self.except_updates = []
+        self.except_updates = deque(maxlen=512)
         self.__except_updates_lock = threading.Lock()
 
         self.__db = Db()

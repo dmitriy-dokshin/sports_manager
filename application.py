@@ -12,11 +12,16 @@ telegram_app = TelegramApp()
 telegram_bot_token = os.environ["TELEGRAM_BOT_TOKEN"]
 
 
+@app.route("/")
+def health():
+    return Response("I'm OK", content_type="text/plain")
+
+
 @app.route("/" + telegram_bot_token)
 def index():
     data = {
-        "all_updates": telegram_app.all_updates,
-        "except_updates": telegram_app.except_updates
+        "all_updates": list(telegram_app.all_updates),
+        "except_updates": list(telegram_app.except_updates)
     }
     return Response(json.dumps(data), content_type="application/json")
 
