@@ -58,7 +58,7 @@ class Db:
 
         self.__execute([callback])
 
-    def plus(self, user, chat_id, created_at, number_of_people=1, paid=False):
+    def plus(self, user, chat_id, created_at, number_of_people=None, paid=False):
         def callback(cnx, cursor):
             self.__add_or_update_user(cursor, user, created_at)
             data = {
@@ -73,12 +73,12 @@ class Db:
 
         self.__execute([callback])
 
-    def minus(self, user, chat_id, created_at):
+    def minus(self, user, chat_id, deleted_at):
         def callback(cnx, cursor):
             data = {
                 "chat_id": chat_id,
                 "player_id": user["id"],
-                "deleted_at": created_at
+                "deleted_at": deleted_at
             }
             cursor.execute(self.__minus_script, data)
             cnx.commit()
