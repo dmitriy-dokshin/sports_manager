@@ -10,22 +10,26 @@ import threading
 
 class TelegramUpdate:
     def __init__(self, data):
+        self.bot_command = None
         self.message = data.get("message")
-        if self.message:
-            self.text = self.message["text"]
-            self.mentions = []
-            if "entities" in self.message:
-                for entity in self.message["entities"]:
-                    def get_entity():
-                        return self.text[entity["offset"]:][:entity["length"]]
-                    entity_type = entity["type"]
-                    if entity_type == "bot_command":
-                        self.bot_command = get_entity()
-                    if entity_type == "mention":
-                        self.mentions.append(get_entity())
-            self.chat_id = self.message["chat"]["id"]
-            self.date = datetime.fromtimestamp(self.message["date"])
-            self.user = self.message["from"]
+        if not self.message:
+            return
+        self.text = self.message.get("text")
+        if not self.text:
+            return
+        self.mentions = []
+        if "entities" in self.message:
+            for entity in self.message["entities"]:
+                def get_entity():
+                    return self.text[entity["offset"]:][:entity["length"]]
+                entity_type = entity["type"]
+                if entity_type == "bot_command":
+                    self.bot_command = get_entity()
+                if entity_type == "mention":
+                    self.mentions.append(get_entity())
+        self.chat_id = self.message["chat"]["id"]
+        self.date = datetime.fromtimestamp(self.message["date"])
+        self.user = self.message["from"]
 
 
 class TelegramApp:
@@ -44,7 +48,8 @@ class TelegramApp:
             "/plus_paid": self.__plus,
             "/minus": self.__minus,
             "/paid": self.__paid,
-            "/list": self.__list
+            "/list": self.__list,
+            "/list_silent": self.__list
         }
         self.__on_update = {}
         for command, handler in on_update.items():
@@ -101,7 +106,10 @@ class TelegramApp:
         i = 1
         for x in result:
             for j in range(0, x["number_of_people"]):
-                row = "{}. @{}".format(i + j, x["username"])
+                username = x["username"]
+                if not update.bot_command.startswith("/list_silent"):
+                    username = "@" + username
+                row = "{}. {}".format(i + j, username)
                 if j > 0:
                     row += " #{}".format(j + 1)
                 if x["paid"]:
