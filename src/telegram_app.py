@@ -43,6 +43,7 @@ class TelegramApp:
             "/plus": self.__plus,
             "/plus_paid": self.__plus,
             "/minus": self.__minus,
+            "/paid": self.__paid,
             "/list": self.__list
         }
         self.__on_update = {}
@@ -84,6 +85,15 @@ class TelegramApp:
         else:
             usernames.append(update.user["username"])
         self.__db.minus(usernames, update.chat_id, update.date)
+
+    def __paid(self, update):
+        usernames = []
+        if update.mentions:
+            for x in update.mentions:
+                usernames.append(x[1:])
+        else:
+            usernames.append(update.user["username"])
+        self.__db.paid(usernames, update.chat_id, update.date)
 
     def __list(self, update):
         result = self.__db.list_players(update.chat_id)

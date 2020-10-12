@@ -17,6 +17,8 @@ class Db:
             self.__plus_script = f.read()
         with open("db_scripts/minus.sql") as f:
             self.__minus_script = f.read()
+        with open("db_scripts/paid.sql") as f:
+            self.__paid_script = f.read()
         with open("db_scripts/list_players.sql") as f:
             self.__list_players_script = f.read()
         with open("db_scripts/find_last_match.sql") as f:
@@ -101,6 +103,20 @@ class Db:
                 data["match_id"] = match_id
                 data["deleted_at"] = deleted_at
                 script = self.__minus_script.format(param_names)
+                cursor.execute(script, data)
+                cnx.commit()
+
+        self.__execute([callback])
+
+    def paid(self, usernames, chat_id, updated_at):
+        def callback(cnx, cursor):
+            match_id = self.__find_last_match(cursor, chat_id)
+            if match_id:
+                data, param_names = self.__build_list_params(
+                    usernames, "username_")
+                data["match_id"] = match_id
+                data["updated_at"] = updated_at
+                script = self.__paid_script.format(param_names)
                 cursor.execute(script, data)
                 cnx.commit()
 
