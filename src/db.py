@@ -48,6 +48,15 @@ class Db:
             return x["id"]
         return None
 
+    def __build_list_params(self, values, prefix):
+        param_data = {}
+        param_names = []
+        for i, value in enumerate(values):
+            param_name = prefix + str(i)
+            param_names.append("%({})s".format(param_name))
+            param_data[param_name] = value
+        return param_data, ", ".join(param_names)
+
     def new_game(self, user, chat_id, created_at):
         def callback(cnx, cursor):
             self.__add_or_update_user(cursor, user, created_at)
@@ -83,16 +92,16 @@ class Db:
 
         self.__execute([callback])
 
-    def minus(self, user, chat_id, deleted_at):
+    def minus(self, usernames, chat_id, deleted_at):
         def callback(cnx, cursor):
             match_id = self.__find_last_match(cursor, chat_id)
             if match_id:
-                data = {
-                    "match_id": match_id,
-                    "player_id": user["id"],
-                    "deleted_at": deleted_at
-                }
-                cursor.execute(self.__minus_script, data)
+                data, param_names = self.__build_list_params(
+                    usernames, "username_")
+                data["match_id"] = match_id
+                data["deleted_at"] = deleted_at
+                script = self.__minus_script.format(param_names)
+                cursor.execute(script, data)
                 cnx.commit()
 
         self.__execute([callback])

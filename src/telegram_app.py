@@ -62,6 +62,7 @@ class TelegramApp:
         except:
             with self.__except_updates_lock:
                 self.except_updates.append(data)
+            raise
 
     def __new_game(self, update):
         self.__db.new_game(update.user, update.chat_id, update.date)
@@ -76,7 +77,13 @@ class TelegramApp:
             paid=paid)
 
     def __minus(self, update):
-        self.__db.minus(update.user, update.chat_id, update.date)
+        usernames = []
+        if update.mentions:
+            for x in update.mentions:
+                usernames.append(x[1:])
+        else:
+            usernames.append(update.user["username"])
+        self.__db.minus(usernames, update.chat_id, update.date)
 
     def __list(self, update):
         result = self.__db.list_players(update.chat_id)
