@@ -120,7 +120,8 @@ class TelegramApp:
         text = ""
         i = 1
         for player in result:
-            for j in range(0, player["number_of_people"]):
+            number_of_people = player["number_of_people"]
+            for j in range(0, number_of_people):
                 username = player["username"]
                 if not username:
                     username = " ".join(
@@ -136,6 +137,6 @@ class TelegramApp:
                 if player["paid"]:
                     row += " (оплатил)"
                 text += row + "\n"
-            i += 1
+            i += number_of_people
         self.__telegram_api.send_message(
             update.chat_id, text, parse_mode="markdown")
