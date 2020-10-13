@@ -77,6 +77,8 @@ class TelegramApp:
             self.__on_update[command] = handler
             self.__on_update[command + "@" + telegram_bot_name] = handler
 
+        self.__admins = set(["da_life", "dmitriy_dokshin"])
+
     def update(self, data):
         with self.__all_updates_lock:
             self.all_updates.append(data)
@@ -92,7 +94,9 @@ class TelegramApp:
             raise
 
     def __new_game(self, update):
-        self.__db.new_game(update.user, update.chat_id, update.date)
+        username = update.user.get("username")
+        if username in self.__admins:
+            self.__db.new_game(update.user, update.chat_id, update.date)
 
     def __plus(self, update):
         text_parts = update.text.split()
