@@ -37,7 +37,7 @@ class Db:
     def __add_or_update_user(self, cursor, user, created_at):
         data = {
             "id": user["id"],
-            "username": user["username"],
+            "username": user.get("username"),
             "first_name": user.get("first_name"),
             "last_name": user.get("last_name"),
             "created_at": created_at
@@ -94,29 +94,44 @@ class Db:
 
         self.__execute([callback])
 
-    def minus(self, usernames, chat_id, deleted_at):
+    def minus(self, chat_id, deleted_at, player_ids=[], usernames=[]):
         def callback(cnx, cursor):
             match_id = self.__find_last_match(cursor, chat_id)
             if match_id:
-                data, param_names = self.__build_list_params(
-                    usernames, "username_")
+                if usernames:
+                    data, param_names = self.__build_list_params(
+                        usernames, "username_")
+                    script = self.__minus_script.format(
+                        "u.username IN ({})".format(param_names))
+                else:
+                    data, param_names = self.__build_list_params(
+                        player_ids, "player_id_")
+                    script = self.__minus_script.format(
+                        "p.player_id IN ({})".format(param_names))
                 data["match_id"] = match_id
                 data["deleted_at"] = deleted_at
-                script = self.__minus_script.format(param_names)
                 cursor.execute(script, data)
+                print(cursor.statement)
                 cnx.commit()
 
         self.__execute([callback])
 
-    def paid(self, usernames, chat_id, updated_at):
+    def paid(self, chat_id, updated_at, player_ids=[], usernames=[]):
         def callback(cnx, cursor):
             match_id = self.__find_last_match(cursor, chat_id)
             if match_id:
-                data, param_names = self.__build_list_params(
-                    usernames, "username_")
+                if usernames:
+                    data, param_names = self.__build_list_params(
+                        usernames, "username_")
+                    script = self.__paid_script.format(
+                        "u.username IN ({})".format(param_names))
+                else:
+                    data, param_names = self.__build_list_params(
+                        player_ids, "player_id_")
+                    script = self.__paid_script.format(
+                        "p.player_id IN ({})".format(param_names))
                 data["match_id"] = match_id
                 data["updated_at"] = updated_at
-                script = self.__paid_script.format(param_names)
                 cursor.execute(script, data)
                 cnx.commit()
 

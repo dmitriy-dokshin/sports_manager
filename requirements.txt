@@ -9,6 +9,7 @@ isort==5.5.4
 itsdangerous==1.1.0
 Jinja2==2.11.2
 lazy-object-proxy==1.4.3
+markdown-strings==3.3.0
 MarkupSafe==1.1.1
 mccabe==0.6.1
 mysql-connector-python==8.0.21
@@ -16,6 +17,7 @@ protobuf==3.13.0
 pycodestyle==2.6.0
 pylint==2.6.0
 requests==2.24.0
+rope==0.18.0
 six==1.15.0
 toml==0.10.1
 urllib3==1.25.10

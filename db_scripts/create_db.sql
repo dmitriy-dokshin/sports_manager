@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS `user` (
 		NOT NULL
         PRIMARY KEY,
 	username VARCHAR(256)
-		NOT NULL
+		NULL
         UNIQUE KEY,
 	first_name VARCHAR(256)
 		NULL,

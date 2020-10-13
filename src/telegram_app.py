@@ -4,6 +4,7 @@ from src.util import try_parse_int
 
 from collections import deque
 from datetime import datetime
+from markdown_strings import esc_format
 
 import os
 import threading
@@ -19,6 +20,7 @@ class TelegramUpdate:
         if not self.text:
             return
         self.mentions = []
+        self.text_mentions = []
         if "entities" in self.message:
             for entity in self.message["entities"]:
                 def get_entity():
@@ -28,9 +30,27 @@ class TelegramUpdate:
                     self.bot_command = get_entity()
                 if entity_type == "mention":
                     self.mentions.append(get_entity())
+                if entity_type == "text_mention":
+                    self.text_mentions.append(entity["user"])
         self.chat_id = self.message["chat"]["id"]
         self.date = datetime.fromtimestamp(self.message["date"])
         self.user = self.message["from"]
+
+    def get_usernames(self):
+        usernames = []
+        if self.mentions:
+            for x in self.mentions:
+                usernames.append(x[1:])
+        return usernames
+
+    def get_user_ids(self):
+        user_ids = []
+        if self.text_mentions:
+            for x in self.text_mentions:
+                user_ids.append(x["id"])
+        else:
+            user_ids.append(self.user["id"])
+        return user_ids
 
 
 class TelegramApp:
@@ -84,38 +104,38 @@ class TelegramApp:
             paid=paid)
 
     def __minus(self, update):
-        usernames = []
-        if update.mentions:
-            for x in update.mentions:
-                usernames.append(x[1:])
-        else:
-            usernames.append(update.user["username"])
-        self.__db.minus(usernames, update.chat_id, update.date)
+        self.__db.minus(
+            update.chat_id, update.date,
+            player_ids=update.get_user_ids(),
+            usernames=update.get_usernames())
 
     def __paid(self, update):
-        usernames = []
-        if update.mentions:
-            for x in update.mentions:
-                usernames.append(x[1:])
-        else:
-            usernames.append(update.user["username"])
-        self.__db.paid(usernames, update.chat_id, update.date)
+        self.__db.paid(
+            update.chat_id, update.date,
+            player_ids=update.get_user_ids(),
+            usernames=update.get_usernames())
 
     def __list(self, update):
         result = self.__db.list_players(update.chat_id)
         text = ""
         i = 1
-        for x in result:
-            for j in range(0, x["number_of_people"]):
-                username = x["username"]
-                if not update.bot_command.startswith("/list_silent"):
-                    username = "@" + username
+        for player in result:
+            for j in range(0, player["number_of_people"]):
+                username = player["username"]
+                if not username:
+                    username = " ".join(
+                        [x for x in [player["first_name"], player["last_name"]] if x != None])
+                if update.bot_command.startswith("/list_silent"):
+                    username = esc_format(username)
+                else:
+                    username = "[{}](tg://user?id={})".format(
+                        username, player["id"])
                 row = "{}. {}".format(i + j, username)
                 if j > 0:
                     row += " #{}".format(j + 1)
-                if x["paid"]:
+                if player["paid"]:
                     row += " (оплатил)"
                 text += row + "\n"
             i += 1
-        print(text)
-        self.__telegram_api.send_message(update.chat_id, text)
+        self.__telegram_api.send_message(
+            update.chat_id, text, parse_mode="markdown")

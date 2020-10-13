@@ -5,4 +5,4 @@ SET
     p.paid = true,
     p.updated_at = %(updated_at)s
 WHERE p.match_id = %(match_id)s
-    AND u.username IN ({});
+    AND {};
