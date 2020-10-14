@@ -1,7 +1,9 @@
-plus - Плюс (можно указать кол-во людей, например, "/plus 2")
-plus_paid - Плюс и/или оплатил (можно указать кол-во людей, например, "/plus_paid 2")
-paid - Указать оплативших через @ (например, "/paid @dmitriy_dokshin @Dmitriy_Petukhov")
-list - Список
-list_silent - Список (без @)
-minus - Минус (можно указать людей через @, например, "/minus @dmitriy_dokshin @Dmitriy_Petukhov")
+help - Общее описание команд
+plus - Плюс
+plus_paid - Плюс и оплатил
+paid - Оплатил
+minus - Минус
+help_admin - Описание команд администратора
 new - Новая игра
+list - Список
+list_silent - Список без призывов

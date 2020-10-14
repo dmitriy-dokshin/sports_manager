@@ -70,7 +70,9 @@ class TelegramApp:
             "/minus": self.__minus,
             "/paid": self.__paid,
             "/list": self.__list,
-            "/list_silent": self.__list
+            "/list_silent": self.__list,
+            "/help": self.__help,
+            "/help_admin": self.__help_admin,
         }
         self.__on_update = {}
         for command, handler in on_update.items():
@@ -78,6 +80,11 @@ class TelegramApp:
             self.__on_update[command + "@" + telegram_bot_name] = handler
 
         self.__admins = set(["da_life", "dmitriy_dokshin"])
+
+        with open("bot_help.txt") as f:
+            self.__bot_help = f.read()
+        with open("bot_help_admin.txt") as f:
+            self.__bot_help_admin = f.read()
 
     def update(self, data):
         with self.__all_updates_lock:
@@ -144,3 +151,9 @@ class TelegramApp:
             i += number_of_people
         self.__telegram_api.send_message(
             update.chat_id, text, parse_mode="markdown")
+
+    def __help(self, update):
+        self.__telegram_api.send_message(update.chat_id, self.__bot_help)
+
+    def __help_admin(self, update):
+        self.__telegram_api.send_message(update.chat_id, self.__bot_help_admin)
