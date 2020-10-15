@@ -110,3 +110,5 @@ venv.bak/
 
 .vscode
 run.sh
+sports_manager.key
+sports_manager.pem

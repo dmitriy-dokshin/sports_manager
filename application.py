@@ -9,11 +9,13 @@ import os
 import ssl
 
 context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-context.load_cert_chain('sports_manager_timeweb.pem',
-                        'sports_manager_timeweb.key')
-app = Flask(__name__, context=context)
+context.load_cert_chain('sports_manager.pem',
+                        'sports_manager.key')
+app = Flask(__name__)
 telegram_app = TelegramApp()
 telegram_bot_token = os.environ["TELEGRAM_BOT_TOKEN"]
+host = os.environ["HOST"]
+port = int(os.environ["PORT"])
 
 
 @app.route("/")
@@ -39,4 +41,4 @@ def update():
 
 if __name__ == "__main__":
     app.debug = True
-    app.run()
+    app.run(host=host, port=port, ssl_context=context)
