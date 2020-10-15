@@ -6,8 +6,12 @@ from flask import Response
 
 import json
 import os
+import ssl
 
-app = Flask(__name__)
+context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+context.load_cert_chain('sports_manager_timeweb.pem',
+                        'sports_manager_timeweb.key')
+app = Flask(__name__, context=context)
 telegram_app = TelegramApp()
 telegram_bot_token = os.environ["TELEGRAM_BOT_TOKEN"]
 
