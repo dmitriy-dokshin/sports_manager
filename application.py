@@ -40,5 +40,4 @@ def update():
 
 
 if __name__ == "__main__":
-    app.debug = True
     app.run(host=host, port=port, ssl_context=context)
