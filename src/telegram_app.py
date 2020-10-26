@@ -1,12 +1,13 @@
 from src.db import Db
 from src.telegram_api import TelegramApi
 from src.util import try_parse_int
+from src.util import get_username
 
 from collections import deque
 from datetime import datetime
-from markdown_strings import esc_format
 
 import os
+import random
 import threading
 
 
@@ -71,6 +72,7 @@ class TelegramApp:
             "/paid": self.__paid,
             "/list": self.__list,
             "/list_silent": self.__list,
+            "/random_teams": self.__random_teams,
             "/help": self.__help,
             "/help_admin": self.__help_admin,
         }
@@ -127,21 +129,14 @@ class TelegramApp:
             usernames=update.get_usernames())
 
     def __list(self, update):
-        result = self.__db.list_players(update.chat_id)
+        players = self.__db.list_players(update.chat_id)
         text = ""
         i = 1
-        for player in result:
+        for player in players:
             number_of_people = player["number_of_people"]
             for j in range(0, number_of_people):
-                username = player["username"]
-                if not username:
-                    username = " ".join(
-                        [x for x in [player["first_name"], player["last_name"]] if x != None])
-                if update.bot_command.startswith("/list_silent"):
-                    username = esc_format(username)
-                else:
-                    username = "[{}](tg://user?id={})".format(
-                        username, player["id"])
+                username = get_username(
+                    player, silent=update.bot_command.startswith("/list_silent"))
                 row = "{}. {}".format(i + j, username)
                 if j > 0:
                     row += " #{}".format(j + 1)
@@ -149,6 +144,35 @@ class TelegramApp:
                     row += " (оплатил)"
                 text += row + "\n"
             i += number_of_people
+        self.__telegram_api.send_message(
+            update.chat_id, text, parse_mode="markdown")
+
+    def __random_teams(self, update):
+        players = self.__db.list_players(update.chat_id)
+        random.shuffle(players)
+        team1 = []
+        team2 = []
+        for player in players:
+            number_of_people = player["number_of_people"]
+            team_flag = len(team1) < len(players) / 2
+            for j in range(0, number_of_people):
+                username = get_username(player, silent=True)
+                if j > 0:
+                    username += " #{}".format(j + 1)
+                if team_flag:
+                    team1.append(username)
+                else:
+                    team2.append(username)
+
+        def print_team(team, title):
+            text = title
+            for i, player in enumerate(team):
+                text += "\n{}. {}".format(i + 1, player)
+            return text
+
+        text = print_team(team1, "Команда 1") + "\n\n" + \
+            print_team(team2, "Команда 2")
+
         self.__telegram_api.send_message(
             update.chat_id, text, parse_mode="markdown")
 
