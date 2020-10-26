@@ -4,7 +4,6 @@ from flask import Flask
 from flask import request
 from flask import Response
 
-import json
 import os
 import ssl
 
@@ -25,11 +24,8 @@ def health():
 
 @app.route("/" + telegram_bot_token)
 def index():
-    data = {
-        "all_updates": list(telegram_app.all_updates),
-        "except_updates": list(telegram_app.except_updates)
-    }
-    return Response(json.dumps(data), content_type="application/json")
+    with open("update_logger.json", "r") as f:
+        return Response(f.read(), content_type="application/json")
 
 
 @app.route("/bot/" + telegram_bot_token + "/update", methods=["POST"])

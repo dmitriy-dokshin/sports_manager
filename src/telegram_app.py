@@ -4,11 +4,40 @@ from src.util import try_parse_int
 from src.util import get_username
 
 from collections import deque
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
+import asyncio
+import json
 import os
 import random
 import threading
+
+
+class UpdateLogger:
+    def __init__(self):
+        self.__ok_updates = deque(maxlen=512)
+        self.__except_updates = deque(maxlen=512)
+        self.__lock = threading.Lock()
+        self.__executor = ThreadPoolExecutor(max_workers=1)
+
+    def __save(self):
+        with self.__lock:
+            data = {
+                "ok_updates": list(self.__ok_updates),
+                "except_updates": list(self.__except_updates)
+            }
+            json_data = json.dumps(data)
+            with open("update_logger.json", "w") as f:
+                f.write(json_data)
+
+    def log(self, data, is_except=False):
+        with self.__lock:
+            if is_except:
+                self.__except_updates.append(data)
+            else:
+                self.__ok_updates.append(data)
+        self.__executor.submit(self.__save)
 
 
 class TelegramUpdate:
@@ -56,11 +85,7 @@ class TelegramUpdate:
 
 class TelegramApp:
     def __init__(self):
-        self.all_updates = deque(maxlen=512)
-        self.__all_updates_lock = threading.Lock()
-        self.except_updates = deque(maxlen=512)
-        self.__except_updates_lock = threading.Lock()
-
+        self.__logger = UpdateLogger()
         self.__db = Db()
         self.__telegram_api = TelegramApi()
         telegram_bot_name = os.environ["TELEGRAM_BOT_NAME"]
@@ -89,18 +114,15 @@ class TelegramApp:
             self.__bot_help_admin = f.read()
 
     def update(self, data):
-        with self.__all_updates_lock:
-            self.all_updates.append(data)
         try:
             update = TelegramUpdate(data)
             if update.bot_command:
                 handler = self.__on_update.get(update.bot_command)
                 if handler:
                     handler(update)
+            self.__logger.log(data)
         except:
-            with self.__except_updates_lock:
-                self.except_updates.append(data)
-            raise
+            self.__logger.log(data, is_except=True)
 
     def __new_game(self, update):
         username = update.user.get("username")
