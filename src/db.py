@@ -111,7 +111,6 @@ class Db:
                 data["match_id"] = match_id
                 data["deleted_at"] = deleted_at
                 cursor.execute(script, data)
-                print(cursor.statement)
                 cnx.commit()
 
         self.__execute([callback])
