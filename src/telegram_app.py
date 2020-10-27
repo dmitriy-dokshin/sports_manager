@@ -6,6 +6,7 @@ from src.util import get_username
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+from datetime import timedelta
 
 import asyncio
 import json
@@ -106,7 +107,7 @@ class TelegramApp:
             self.__on_update[command] = handler
             self.__on_update[command + "@" + telegram_bot_name] = handler
 
-        self.__admins = set(["da_life", "dmitriy_dokshin"])
+        self.__admins = set()  # set(["da_life", "dmitriy_dokshin"])
 
         with open("bot_help.txt") as f:
             self.__bot_help = f.read()
@@ -126,10 +127,15 @@ class TelegramApp:
 
     def __new_game(self, update):
         username = update.user.get("username")
-        if username in self.__admins:
+        if not self.__admins or username in self.__admins:
             self.__db.new_game(update.user, update.chat_id, update.date)
 
     def __plus(self, update):
+        match_age = self.__db.find_last_match_age(update.chat_id)
+        if match_age and match_age > timedelta(days=6, hours=20):
+            self.__telegram_api.send_message(
+                update.chat_id, "Забыли создать новую игру? /new")
+
         text_parts = update.text.split()
         number_of_people = try_parse_int(text_parts[-1])
         paid = update.bot_command.startswith("/plus_paid")

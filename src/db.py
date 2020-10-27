@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import mysql.connector
 import os
 
@@ -47,7 +49,13 @@ class Db:
     def __find_last_match(self, cursor, chat_id):
         cursor.execute(self.__find_last_match_script, {"chat_id": chat_id})
         for x in cursor:
-            return x["id"]
+            return x
+        return None
+
+    def __find_last_match_id(self, cursor, chat_id):
+        match = self.__find_last_match(cursor, chat_id)
+        if match:
+            return match["id"]
         return None
 
     def __build_list_params(self, values, prefix):
@@ -58,6 +66,19 @@ class Db:
             param_names.append("%({})s".format(param_name))
             param_data[param_name] = value
         return param_data, ", ".join(param_names)
+
+    def find_last_match_age(self, chat_id):
+        # That's terrible but I don't know a simple and quick solution now
+        result = {}
+
+        def callback(cnx, cursor):
+            result["match"] = self.__find_last_match(cursor, chat_id)
+
+        self.__execute([callback])
+
+        if result:
+            return datetime.now() - result["match"]["created_at"]
+        return None
 
     def new_game(self, user, chat_id, created_at):
         def callback(cnx, cursor):
@@ -79,7 +100,7 @@ class Db:
 
     def plus(self, user, chat_id, created_at, number_of_people=None, paid=False):
         def callback(cnx, cursor):
-            match_id = self.__find_last_match(cursor, chat_id)
+            match_id = self.__find_last_match_id(cursor, chat_id)
             if match_id:
                 self.__add_or_update_user(cursor, user, created_at)
                 data = {
@@ -96,7 +117,7 @@ class Db:
 
     def minus(self, chat_id, deleted_at, player_ids=[], usernames=[]):
         def callback(cnx, cursor):
-            match_id = self.__find_last_match(cursor, chat_id)
+            match_id = self.__find_last_match_id(cursor, chat_id)
             if match_id:
                 if usernames:
                     data, param_names = self.__build_list_params(
@@ -117,7 +138,7 @@ class Db:
 
     def paid(self, chat_id, updated_at, player_ids=[], usernames=[]):
         def callback(cnx, cursor):
-            match_id = self.__find_last_match(cursor, chat_id)
+            match_id = self.__find_last_match_id(cursor, chat_id)
             if match_id:
                 if usernames:
                     data, param_names = self.__build_list_params(
@@ -140,7 +161,7 @@ class Db:
         result = []
 
         def callback(cnx, cursor):
-            match_id = self.__find_last_match(cursor, chat_id)
+            match_id = self.__find_last_match_id(cursor, chat_id)
             if match_id:
                 data = {"match_id": match_id}
                 cursor.execute(self.__list_players_script, data)
