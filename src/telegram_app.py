@@ -107,7 +107,8 @@ class TelegramApp:
             self.__on_update[command] = handler
             self.__on_update[command + "@" + telegram_bot_name] = handler
 
-        self.__admins = set()  # set(["da_life", "dmitriy_dokshin"])
+        self.__admins = set(["da_life", "dmitriy_dokshin"])
+        self.__alert_match_age = False
 
         with open("bot_help.txt") as f:
             self.__bot_help = f.read()
@@ -131,10 +132,11 @@ class TelegramApp:
             self.__db.new_game(update.user, update.chat_id, update.date)
 
     def __plus(self, update):
-        match_age = self.__db.find_last_match_age(update.chat_id)
-        if match_age and match_age > timedelta(days=6, hours=20):
-            self.__telegram_api.send_message(
-                update.chat_id, "Забыли создать новую игру? /new")
+        if self.__alert_match_age:
+            match_age = self.__db.find_last_match_age(update.chat_id)
+            if match_age and match_age > timedelta(days=7):
+                self.__telegram_api.send_message(
+                    update.chat_id, "Забыли создать новую игру? /new")
 
         text_parts = update.text.split()
         number_of_people = try_parse_int(text_parts[-1])
