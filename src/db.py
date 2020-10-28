@@ -77,7 +77,7 @@ class Db:
         self.__execute([callback])
 
         if result:
-            return datetime.now() - result["match"]["created_at"]
+            return datetime.utcnow() - result["match"]["created_at"]
         return None
 
     def new_game(self, user, chat_id, created_at):

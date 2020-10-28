@@ -64,7 +64,7 @@ class TelegramUpdate:
                 if entity_type == "text_mention":
                     self.text_mentions.append(entity["user"])
         self.chat_id = self.message["chat"]["id"]
-        self.date = datetime.fromtimestamp(self.message["date"])
+        self.date = datetime.utcfromtimestamp(self.message["date"])
         self.user = self.message["from"]
 
     def get_usernames(self):
