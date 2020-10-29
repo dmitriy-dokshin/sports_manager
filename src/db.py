@@ -25,6 +25,8 @@ class Db:
             self.__list_players_script = f.read()
         with open("db_scripts/find_last_match.sql") as f:
             self.__find_last_match_script = f.read()
+        with open("db_scripts/update_match_schedule.sql") as f:
+            self.__update_match_schedule_script = f.read()
 
     def __execute(self, callbacks, cursor_args={"dictionary": True}):
         cnx = mysql.connector.connect(**self.__config)
@@ -80,9 +82,12 @@ class Db:
             return datetime.utcnow() - result["match"]["created_at"]
         return None
 
-    def new_game(self, user, chat_id, created_at):
+    def new_game(self, chat_id, created_at, user=None):
         def callback(cnx, cursor):
-            self.__add_or_update_user(cursor, user, created_at)
+            owner_id = None
+            if user:
+                self.__add_or_update_user(cursor, user, created_at)
+                owner_id = user["id"]
             script = (
                 "INSERT INTO `match` (chat_id, created_at, owner_id)\n"
                 "VALUES (%(chat_id)s, %(created_at)s, %(owner_id)s)"
@@ -90,13 +95,47 @@ class Db:
             data = {
                 "chat_id": chat_id,
                 "created_at": created_at,
-                "owner_id": user["id"]
-
+                "owner_id": owner_id
             }
             cursor.execute(script, data)
             cnx.commit()
 
         self.__execute([callback])
+
+    def update_match_schedule(self, chat_id, cron, user, updated_at):
+        def callback(cnx, cursor):
+            self.__add_or_update_user(cursor, user, updated_at)
+            data = {
+                "chat_id": chat_id,
+                "cron": cron,
+                "updated_at": updated_at,
+                "owner_id": user["id"]
+            }
+            cursor.execute(self.__update_match_schedule_script, data)
+            cnx.commit()
+
+        self.__execute([callback])
+
+    def delete_match_schedule(self, chat_id):
+        def callback(cnx, cursor):
+            script = "DELETE FROM match_schedule WHERE chat_id = %(chat_id)s"
+            data = {"chat_id": chat_id}
+            cursor.execute(script, data)
+            cnx.commit()
+
+        self.__execute([callback])
+
+    def get_match_schedules(self):
+        result = []
+
+        def callback(cnx, cursor):
+            script = "SELECT chat_id, cron FROM match_schedule ORDER BY chat_id"
+            cursor.execute(script)
+            result.extend(cursor.fetchall())
+
+        self.__execute([callback])
+
+        return result
 
     def plus(self, user, chat_id, created_at, number_of_people=None, paid=False):
         def callback(cnx, cursor):

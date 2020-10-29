@@ -35,6 +35,17 @@ CREATE TABLE IF NOT EXISTS `match` (
         REFERENCES `user` (id)
 );
 
+CREATE TABLE IF NOT EXISTS `match_schedule` (
+    chat_id BIGINT
+        NOT NULL
+        PRIMARY KEY,
+    cron VARCHAR(256),
+    updated_at DATETIME
+        NOT NULL,
+    owner_id BIGINT
+        NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS `match_player` (
     match_id INT UNSIGNED
         NOT NULL,

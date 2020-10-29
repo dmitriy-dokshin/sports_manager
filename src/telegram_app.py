@@ -5,6 +5,7 @@ from src.util import get_username
 
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
+from croniter import croniter
 from datetime import datetime
 from datetime import timedelta
 
@@ -12,7 +13,36 @@ import asyncio
 import json
 import os
 import random
+import signal
 import threading
+
+
+class Scheduler:
+    def __init__(self):
+        self.__lock = threading.RLock()
+        self.__executor = ThreadPoolExecutor(max_workers=32)
+        self.__cancellation_events = {}
+
+        def sigint_handler(sig_num, stack_frame):
+            for event in self.__cancellation_events.values():
+                event.set()
+            if self.__prev_sigint_handler:
+                self.__prev_sigint_handler(sig_num, stack_frame)
+        self.__prev_sigint_handler = signal.signal(
+            signal.SIGINT, sigint_handler)
+
+    def run(self, key, callback):
+        with self.__lock:
+            self.cancel(key)
+            cancellation_event = threading.Event()
+            self.__cancellation_events[key] = cancellation_event
+            self.__executor.submit(callback, cancellation_event)
+
+    def cancel(self, key):
+        with self.__lock:
+            cancellation_event = self.__cancellation_events.get(key)
+            if cancellation_event:
+                cancellation_event.set()
 
 
 class UpdateLogger:
@@ -92,6 +122,8 @@ class TelegramApp:
         telegram_bot_name = os.environ["TELEGRAM_BOT_NAME"]
         on_update = {
             "/new": self.__new_game,
+            "/set_schedule": self.__set_schedule,
+            "/delete_schedule": self.__delete_schedule,
             "/plus": self.__plus,
             "/plus_paid": self.__plus,
             "/minus": self.__minus,
@@ -100,7 +132,7 @@ class TelegramApp:
             "/list_silent": self.__list,
             "/random_teams": self.__random_teams,
             "/help": self.__help,
-            "/help_admin": self.__help_admin,
+            "/help_admin": self.__help_admin
         }
         self.__on_update = {}
         for command, handler in on_update.items():
@@ -114,6 +146,12 @@ class TelegramApp:
             self.__bot_help = f.read()
         with open("bot_help_admin.txt") as f:
             self.__bot_help_admin = f.read()
+
+        self.__scheduler = Scheduler()
+        for x in self.__db.get_match_schedules():
+            chat_id = x["chat_id"]
+            cron = x["cron"]
+            self.__schedule_impl(chat_id, cron)
 
     def update(self, data):
         try:
@@ -129,7 +167,43 @@ class TelegramApp:
     def __new_game(self, update):
         username = update.user.get("username")
         if not self.__admins or username in self.__admins:
-            self.__db.new_game(update.user, update.chat_id, update.date)
+            self.__db.new_game(update.chat_id, update.date, update.user)
+
+    def __schedule_impl(self, chat_id, cron):
+        iter = croniter(cron, datetime.utcnow())
+
+        def callback(cancellation_event):
+            while True:
+                created_at = iter.get_next(datetime)
+                t = (created_at - datetime.utcnow()).total_seconds()
+                if cancellation_event.wait(t):
+                    break
+                else:
+                    self.__db.new_game(chat_id, created_at)
+                    self.__telegram_api.send_message(
+                        chat_id, "Новая игра создана. Записывайтесь!")
+
+        self.__scheduler.run(chat_id, callback)
+
+    def __set_schedule(self, update):
+        text_parts = update.text.split()
+        cron = None
+        if len(text_parts) > 1:
+            cron_text = " ".join(text_parts[1:])
+            if croniter.is_valid(cron_text):
+                cron = cron_text
+
+        if cron:
+            self.__schedule_impl(update.chat_id, cron)
+            self.__db.update_match_schedule(
+                update.chat_id, cron, update.user, update.date)
+        else:
+            self.__telegram_api.send_message(
+                update.chat_id, "С указанным cron выражением что-то не так")
+
+    def __delete_schedule(self, update):
+        self.__scheduler.cancel(update.chat_id)
+        self.__db.delete_match_schedule(update.chat_id)
 
     def __plus(self, update):
         if self.__alert_match_age:
