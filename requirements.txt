@@ -1,8 +1,11 @@
 astroid==2.4.2
 autopep8==1.5.4
 certifi==2020.6.20
+cffi==1.14.3
 chardet==3.0.4
 click==7.1.2
+croniter==0.3.35
+cryptography==3.1.1
 Flask==1.1.2
 idna==2.10
 isort==5.5.4
@@ -13,9 +16,13 @@ markdown-strings==3.3.0
 MarkupSafe==1.1.1
 mccabe==0.6.1
 mysql-connector-python==8.0.21
+natsort==7.0.1
 protobuf==3.13.0
 pycodestyle==2.6.0
+pycparser==2.20
 pylint==2.6.0
+pyOpenSSL==19.1.0
+python-dateutil==2.8.1
 requests==2.24.0
 rope==0.18.0
 six==1.15.0
