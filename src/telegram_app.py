@@ -175,6 +175,8 @@ class TelegramApp:
         def callback(cancellation_event):
             while True:
                 created_at = iter.get_next(datetime)
+                print("Новая игра для чата {} будет создана {}".format(
+                    chat_id, created_at))
                 t = (created_at - datetime.utcnow()).total_seconds()
                 if cancellation_event.wait(t):
                     break
