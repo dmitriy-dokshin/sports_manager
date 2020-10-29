@@ -17,12 +17,7 @@ host = os.environ["HOST"]
 port = int(os.environ["PORT"])
 
 
-@app.route("/")
-def health():
-    return Response("I'm OK", content_type="text/plain")
-
-
-@app.route("/" + telegram_bot_token)
+@app.route("/bot/" + telegram_bot_token + "/log")
 def index():
     with open("update_logger.json", "r") as f:
         return Response(f.read(), content_type="application/json")
@@ -36,4 +31,4 @@ def update():
 
 
 if __name__ == "__main__":
-    app.run(host=host, port=port, ssl_context=context)
+    app.run(host=host, port=port, ssl_context=context, threaded=True)
