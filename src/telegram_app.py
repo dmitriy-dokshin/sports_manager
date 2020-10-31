@@ -10,10 +10,10 @@ from datetime import datetime
 from datetime import timedelta
 
 import asyncio
+import atexit
 import json
 import os
 import random
-import signal
 import threading
 
 
@@ -23,13 +23,10 @@ class Scheduler:
         self.__executor = ThreadPoolExecutor(max_workers=32)
         self.__cancellation_events = {}
 
-        def sigint_handler(sig_num, stack_frame):
+        def sigint_handler():
             for event in self.__cancellation_events.values():
                 event.set()
-            if self.__prev_sigint_handler:
-                self.__prev_sigint_handler(sig_num, stack_frame)
-        self.__prev_sigint_handler = signal.signal(
-            signal.SIGTERM, sigint_handler)
+        atexit.register(sigint_handler)
 
     def run(self, key, callback):
         with self.__lock:
