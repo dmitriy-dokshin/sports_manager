@@ -29,7 +29,7 @@ class Scheduler:
             if self.__prev_sigint_handler:
                 self.__prev_sigint_handler(sig_num, stack_frame)
         self.__prev_sigint_handler = signal.signal(
-            signal.SIGINT, sigint_handler)
+            signal.SIGTERM, sigint_handler)
 
     def run(self, key, callback):
         with self.__lock:
