@@ -124,9 +124,9 @@ class TelegramApp:
             "/plus": self.__plus,
             "/plus_paid": self.__plus,
             "/minus": self.__minus,
-            "/paid": self.__paid,
+            "/paid": self.__plus,
             "/list": self.__list,
-            "/list_silent": self.__list,
+            "/list_aloud": self.__list,
             "/random_teams": self.__random_teams,
             "/help": self.__help,
             "/help_admin": self.__help_admin
@@ -213,7 +213,8 @@ class TelegramApp:
 
         text_parts = update.text.split()
         number_of_people = try_parse_int(text_parts[-1])
-        paid = update.bot_command.startswith("/plus_paid")
+        paid = update.bot_command.startswith(
+            "/plus_paid") or update.bot_command.startswith("/paid")
         self.__db.plus(
             update.user, update.chat_id, update.date,
             number_of_people=number_of_people,
@@ -239,7 +240,7 @@ class TelegramApp:
             number_of_people = player["number_of_people"]
             for j in range(0, number_of_people):
                 username = get_username(
-                    player, silent=update.bot_command.startswith("/list_silent"))
+                    player, silent=not update.bot_command.startswith("/list_aloud"))
                 row = "{}. {}".format(i + j, username)
                 if j > 0:
                     row += " #{}".format(j + 1)
