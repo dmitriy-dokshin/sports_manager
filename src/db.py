@@ -27,6 +27,12 @@ class Db:
             self.__find_last_match_script = f.read()
         with open("db_scripts/update_match_schedule.sql") as f:
             self.__update_match_schedule_script = f.read()
+        with open("db_scripts/create_player_stats.sql") as f:
+            self.__create_player_stats_script = f.read()
+        with open("db_scripts/select_max_matches_count.sql") as f:
+            self.__select_max_matches_count_script = f.read()
+        with open("db_scripts/select_player_stats.sql") as f:
+            self.__select_player_stats_script = f.read()
 
     def __execute(self, callbacks, cursor_args={"dictionary": True}):
         cnx = mysql.connector.connect(**self.__config)
@@ -207,5 +213,23 @@ class Db:
                 result.extend(cursor.fetchall())
 
         self.__execute([callback])
+
+        return result
+
+    def get_player_stats(self, chat_id):
+        result = []
+
+        def create_player_stats(cnx, cursor):
+            data = {"chat_id": chat_id}
+            cursor.execute(self.__create_player_stats_script, data)
+
+        def select_max_matches_count(cnx, cursor):
+            cursor.execute(self.__select_max_matches_count_script)
+
+        def select_player_stats(cnx, cursor):
+            cursor.execute(self.__select_player_stats_script)
+            result.extend(cursor.fetchall())
+
+        self.__execute([create_player_stats, select_max_matches_count, select_player_stats])
 
         return result

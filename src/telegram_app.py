@@ -1,6 +1,7 @@
 from src.db import Db
 from src.telegram_api import TelegramApi
 from src.util import try_parse_int
+from src.util import get_full_name
 from src.util import get_username
 
 from collections import deque
@@ -128,6 +129,7 @@ class TelegramApp:
             "/list": self.__list,
             "/list_aloud": self.__list,
             "/random_teams": self.__random_teams,
+            "/player_stats": self.__player_stats,
             "/help": self.__help,
             "/help_admin": self.__help_admin
         }
@@ -276,6 +278,45 @@ class TelegramApp:
 
         text = print_team(team1, "Команда 1") + "\n\n" + \
             print_team(team2, "Команда 2")
+
+        self.__telegram_api.send_message(
+            update.chat_id, text, parse_mode="markdown")
+
+    def __player_stats(self, update):
+        players = self.__db.get_player_stats(update.chat_id)
+        headers = ["#", "Username", "Имя", "Матчи", "Голоса для опроса"]
+        max_lens = [len(x) for x in headers]
+        rows = []
+        i = 1
+        for player in players:
+            row = [
+                str(i),
+                player["username"] or "NULL",
+                get_full_name(player) or "NULL",
+                str(player["matches_count"]),
+                str(player["poll_votes_count"])
+            ]
+            for j, x in enumerate(row, 0):
+                max_lens[j] = max(max_lens[j], len(x))
+            rows.append(row)
+            i += 1
+
+        def build_row(row, space=" ", frame="|"):
+            result = (space + frame + space).join(
+                x + (" " * (max_lens[j] - len(x))) for j, x in enumerate(row, 0))
+            return space.join([frame, result, frame])
+
+        row_delimiter = build_row(("-" * x for x in max_lens), space="-", frame="+")
+        final_rows = [
+            row_delimiter,
+            build_row(headers),
+            row_delimiter
+        ]
+        for row in rows:
+            final_rows.append(build_row(row))
+        final_rows.append(row_delimiter)
+        
+        text = "```\n{}\n```".format("\n".join(final_rows))
 
         self.__telegram_api.send_message(
             update.chat_id, text, parse_mode="markdown")
