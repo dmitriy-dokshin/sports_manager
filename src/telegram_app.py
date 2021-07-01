@@ -43,38 +43,34 @@ class Scheduler:
                 cancellation_event.set()
 
 
-class UpdateLogger:
-    def __init__(self):
-        self.__ok_updates = deque(maxlen=512)
-        self.__except_updates = deque(maxlen=512)
-        self.__lock = threading.Lock()
-        self.__executor = ThreadPoolExecutor(max_workers=1)
-
-    def __save(self):
-        with self.__lock:
-            data = {
-                "ok_updates": list(self.__ok_updates),
-                "except_updates": list(self.__except_updates)
-            }
-            json_data = json.dumps(data)
-            with open("update_logger.json", "w") as f:
-                f.write(json_data)
-
-    def log(self, data, is_except=False):
-        with self.__lock:
-            if is_except:
-                self.__except_updates.append(data)
-            else:
-                self.__ok_updates.append(data)
-        self.__executor.submit(self.__save)
-
-
 class TelegramUpdate:
     def __init__(self, data):
+        print(json.dumps(data), flush=True)
+
         self.bot_command = None
+        self.data = None
+
+        callback_query = data.get("callback_query")
+        if callback_query:
+            self.data = callback_query["data"]
+            try:
+                self.data = json.loads(self.data)
+            except:
+                pass
+            if isinstance(self.data, list) and len(self.data) > 0:
+                self.bot_command = self.data[0]
+            else:
+                self.data = None
+            self.message = callback_query["message"]
+            self.chat_id = self.message["chat"]["id"]
+            self.date = datetime.now()
+            self.user = callback_query["from"]
+            return
+
         self.message = data.get("message")
         if not self.message:
             return
+        self.message_id = self.message["message_id"]
         self.text = self.message.get("text")
         if not self.text:
             return
@@ -114,7 +110,6 @@ class TelegramUpdate:
 
 class TelegramApp:
     def __init__(self):
-        self.__logger = UpdateLogger()
         self.__db = Db()
         self.__telegram_api = TelegramApi()
         telegram_bot_name = os.environ["TELEGRAM_BOT_NAME"]
@@ -153,15 +148,11 @@ class TelegramApp:
             self.__schedule_impl(chat_id, cron)
 
     def update(self, data):
-        try:
-            update = TelegramUpdate(data)
-            if update.bot_command:
-                handler = self.__on_update.get(update.bot_command)
-                if handler:
-                    handler(update)
-            self.__logger.log(data)
-        except:
-            self.__logger.log(data, is_except=True)
+        update = TelegramUpdate(data)
+        if update.bot_command:
+            handler = self.__on_update.get(update.bot_command)
+            if handler:
+                handler(update)
 
     def __new_game(self, update):
         username = update.user.get("username")
@@ -213,14 +204,30 @@ class TelegramApp:
                 self.__telegram_api.send_message(
                     update.chat_id, "Забыли создать новую игру? /new")
 
-        text_parts = update.text.split()
-        number_of_people = try_parse_int(text_parts[-1])
-        paid = update.bot_command.startswith(
-            "/plus_paid") or update.bot_command.startswith("/paid")
+        number_of_people = None
+        if update.data and len(update.data) > 1:
+            number_of_people = update.data[1]
+            if not isinstance(number_of_people, int):
+                number_of_people = None
+
+        paid_commands = ["/plus_paid", "/paid"]
+        paid = any(x for x in paid_commands if update.bot_command.startswith(x))
+
         self.__db.plus(
             update.user, update.chat_id, update.date,
             number_of_people=number_of_people,
             paid=paid)
+
+        if not number_of_people:
+            buttons = []
+            for x in range(1, 5):
+                buttons.append({"text": str(x), "callback_data": json.dumps([update.bot_command, x])})
+            reply_markup = {"inline_keyboard": [buttons]}
+            self.__telegram_api.send_message(
+                update.chat_id, "Если надо, можно указать количество людей, включая тебя",
+                reply_markup=reply_markup,
+                reply_to_message_id=update.message_id)
+
 
     def __minus(self, update):
         self.__db.minus(

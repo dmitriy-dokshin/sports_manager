@@ -11,12 +11,6 @@ telegram_app = TelegramApp()
 telegram_bot_token = os.environ["TELEGRAM_BOT_TOKEN"]
 
 
-@app.route("/bot/" + telegram_bot_token + "/log")
-def index():
-    with open("update_logger.json", "r") as f:
-        return Response(f.read(), content_type="application/json")
-
-
 @app.route("/bot/" + telegram_bot_token + "/update", methods=["POST"])
 def update():
     data = request.get_json()
