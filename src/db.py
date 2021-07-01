@@ -173,7 +173,7 @@ class Db:
                     data, param_names = self.__build_list_params(
                         player_ids, "player_id_")
                     script = self.__minus_script.format(
-                        "p.player_id IN ({})".format(param_names))
+                        "u.id IN ({})".format(param_names))
                 data["match_id"] = match_id
                 data["deleted_at"] = deleted_at
                 cursor.execute(script, data)
@@ -202,7 +202,7 @@ class Db:
 
         self.__execute([callback])
 
-    def list_players(self, chat_id):
+    def list_players(self, chat_id, return_deleted=False):
         result = []
 
         def callback(cnx, cursor):
@@ -213,6 +213,9 @@ class Db:
                 result.extend(cursor.fetchall())
 
         self.__execute([callback])
+
+        if not return_deleted:
+            result = [x for x in result if not x["deleted_at"]]
 
         return result
 

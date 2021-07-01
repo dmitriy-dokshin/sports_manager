@@ -241,9 +241,7 @@ class TelegramApp:
             player_ids=update.get_user_ids(),
             usernames=update.get_usernames())
 
-    def __list(self, update):
-        players = self.__db.list_players(update.chat_id)
-        text = ""
+    def __print_players(self, update, players, text):
         i = 1
         for player in players:
             number_of_people = player["number_of_people"]
@@ -251,14 +249,34 @@ class TelegramApp:
                 username = get_username(
                     player, silent=not update.bot_command.startswith("/list_aloud"))
                 row = "{}. {}".format(i + j, username)
-                if j > 0:
+                if number_of_people > 1:
                     row += " #{}".format(j + 1)
                 if player["paid"]:
                     row += " (оплатил)"
                 text += row + "\n"
             i += number_of_people
+        return text
+
+
+    def __list(self, update):
+        players = self.__db.list_players(update.chat_id, return_deleted=True)
+        text = ""
+
+        plus_players = [x for x in players if not x["deleted_at"]]
+        if plus_players:
+            text += "Идут:\n"
+            text = self.__print_players(update, plus_players, text)
+
+        minus_players = [x for x in players if x["deleted_at"]]
+        if minus_players:
+            if plus_players:
+                text += "\n"
+            text += "Не идут:\n"
+            text = self.__print_players(update, minus_players, text)
+
         self.__telegram_api.send_message(
             update.chat_id, text, parse_mode="markdown")
+
 
     def __random_teams(self, update):
         players = self.__db.list_players(update.chat_id)
