@@ -17,3 +17,10 @@ class TelegramApi:
         if reply_to_message_id:
             data["reply_to_message_id"] = reply_to_message_id
         requests.post(self.__send_message_url, json=data)
+
+    def get_chat_member(self, chat_id, user_id):
+        params = {"chat_id": chat_id, "user_id": user_id}
+        response = requests.get(self.__send_message_url, params=params)
+        if response.status_code != 200:
+            return None
+        return response.json()

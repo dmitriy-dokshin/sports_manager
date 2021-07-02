@@ -4,13 +4,11 @@ from src.util import try_parse_int
 from src.util import get_full_name
 from src.util import get_username
 
-from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from croniter import croniter
 from datetime import datetime
 from datetime import timedelta
 
-import asyncio
 import atexit
 import json
 import os
@@ -123,6 +121,8 @@ class TelegramApp:
             "/paid": self.__plus,
             "/list": self.__list,
             "/list_aloud": self.__list,
+            "/call_undecided": self.__call_undecided,
+            "/call_unpaid": self.__call_unpaid,
             "/random_teams": self.__random_teams,
             "/player_stats": self.__player_stats,
             "/help": self.__help,
@@ -224,10 +224,9 @@ class TelegramApp:
                 buttons.append({"text": str(x), "callback_data": json.dumps([update.bot_command, x])})
             reply_markup = {"inline_keyboard": [buttons]}
             self.__telegram_api.send_message(
-                update.chat_id, "Если надо, можно указать количество людей, включая тебя",
+                update.chat_id, "Если надо, можно указать количество людей, включая себя",
                 reply_markup=reply_markup,
                 reply_to_message_id=update.message_id)
-
 
     def __minus(self, update):
         self.__db.minus(
@@ -257,7 +256,6 @@ class TelegramApp:
             i += number_of_people
         return text
 
-
     def __list(self, update):
         players = self.__db.list_players(update.chat_id, return_deleted=True)
         text = ""
@@ -277,6 +275,33 @@ class TelegramApp:
         self.__telegram_api.send_message(
             update.chat_id, text, parse_mode="markdown")
 
+    def __call_undecided(self, update):
+        match_players = set(x["id"] for x in self.__db.list_players(update.chat_id, return_deleted=True))
+        undecided_players = [x for x in self.__db.get_player_stats(update.chat_id) if x["id"] not in match_players]
+        text = ""
+        if undecided_players:
+            text = "Нужно больше людей!"
+            for player in undecided_players:
+                username = get_username(player, silent=False)
+                text += " " + username
+        else:
+            text = "Все определились"
+        self.__telegram_api.send_message(
+            update.chat_id, text, parse_mode="markdown")
+
+    def __call_unpaid(self, update):
+        players = self.__db.list_players(update.chat_id)
+        unpaid_players = [x for x in players if not x["paid"]]
+        text = ""
+        if unpaid_players:
+            text = "Нужно больше золота!"
+            for player in unpaid_players:
+                username = get_username(player, silent=False)
+                text += " " + username
+        else:
+            text = "Все оплатили"
+        self.__telegram_api.send_message(
+            update.chat_id, text, parse_mode="markdown")
 
     def __random_teams(self, update):
         players = self.__db.list_players(update.chat_id)
