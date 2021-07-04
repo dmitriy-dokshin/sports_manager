@@ -6,7 +6,6 @@ class TelegramApi:
     def __init__(self):
         self.__telegram_bot_token = os.environ["TELEGRAM_BOT_TOKEN"]
         self.__base_url = "https://api.telegram.org/bot" + self.__telegram_bot_token
-        self.__send_message_url = self.__base_url + "/sendMessage"
 
     def send_message(self, chat_id, text, parse_mode=None, reply_markup=None, reply_to_message_id=None):
         data = {"chat_id": chat_id, "text": text}
@@ -16,11 +15,11 @@ class TelegramApi:
             data["reply_markup"] = reply_markup
         if reply_to_message_id:
             data["reply_to_message_id"] = reply_to_message_id
-        requests.post(self.__send_message_url, json=data)
+        requests.post(self.__base_url + "/sendMessage", json=data)
 
     def get_chat_member(self, chat_id, user_id):
         params = {"chat_id": chat_id, "user_id": user_id}
-        response = requests.get(self.__send_message_url, params=params)
+        response = requests.get(self.__base_url + "/getChatMember", params=params)
         if response.status_code != 200:
             return None
-        return response.json()
+        return response.json()["result"]

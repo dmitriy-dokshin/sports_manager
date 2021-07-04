@@ -279,11 +279,14 @@ class TelegramApp:
         match_players = set(x["id"] for x in self.__db.list_players(update.chat_id, return_deleted=True))
         undecided_players = [x for x in self.__db.get_player_stats(update.chat_id) if x["id"] not in match_players]
         text = ""
+        inactive_chat_member_statuses = set(["left", "kicked"])
         if undecided_players:
             text = "Нужно больше людей!"
             for player in undecided_players:
-                username = get_username(player, silent=False)
-                text += " " + username
+                chat_member = self.__telegram_api.get_chat_member(update.chat_id, player["id"])
+                if chat_member and chat_member["status"] not in inactive_chat_member_statuses:
+                    username = get_username(player, silent=False)
+                    text += " " + username
         else:
             text = "Все определились"
         self.__telegram_api.send_message(
