@@ -1,5 +1,6 @@
 from src.db import Db
 from src.telegram_api import TelegramApi
+from src.util import is_valid_custom_name
 from src.util import try_parse_int
 from src.util import get_full_name
 from src.util import get_username
@@ -119,6 +120,7 @@ class TelegramApp:
             "/plus_paid": self.__plus,
             "/minus": self.__minus,
             "/paid": self.__plus,
+            "/set_name": self.__set_name,
             "/list": self.__list,
             "/list_aloud": self.__list,
             "/call_undecided": self.__call_undecided,
@@ -239,6 +241,19 @@ class TelegramApp:
             update.chat_id, update.date,
             player_ids=update.get_user_ids(),
             usernames=update.get_usernames())
+
+    def __set_name(self, update):
+        text_parts = update.text.split()
+        custom_name = None
+        if len(text_parts) > 1:
+            custom_name = " ".join(text_parts[1:]).strip()
+            if not is_valid_custom_name(custom_name):
+                self.__telegram_api.send_message(
+                    update.chat_id, "Имя должно содержать только русские и английские буквы, цифры и пробел (длина от 4 до 64 символов)",
+                    reply_to_message_id=update.message_id)
+                return
+
+        self.__db.set_custom_name(update.user, custom_name, update.date)
 
     def __print_players(self, update, players, text):
         i = 1

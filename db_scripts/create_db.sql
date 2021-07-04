@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS `user` (
         NULL,
     last_name VARCHAR(256)
         NULL,
+    custom_name VARCHAR(256)
+        NULL,
     created_at DATETIME
         NOT NULL,
     updated_at DATETIME

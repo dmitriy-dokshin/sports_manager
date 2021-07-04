@@ -3,6 +3,7 @@ SELECT
     u.username,
     u.first_name,
     u.last_name,
+    u.custom_name,
     p.number_of_people,
     p.paid,
     p.deleted_at

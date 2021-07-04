@@ -44,12 +44,13 @@ class Db:
             cursor.close()
             cnx.close()
 
-    def __add_or_update_user(self, cursor, user, created_at):
+    def __add_or_update_user(self, cursor, user, created_at, custom_name=None):
         data = {
             "id": user["id"],
             "username": user.get("username"),
             "first_name": user.get("first_name"),
             "last_name": user.get("last_name"),
+            "custom_name": custom_name,
             "created_at": created_at
         }
         cursor.execute(self.__add_or_update_user_script, data)
@@ -236,3 +237,10 @@ class Db:
         self.__execute([create_player_stats, select_max_matches_count, select_player_stats])
 
         return result
+
+    def set_custom_name(self, user, custom_name, created_at):
+        def callback(cnx, cursor):
+            self.__add_or_update_user(cursor, user, created_at, custom_name)
+            cnx.commit()
+
+        self.__execute([callback])

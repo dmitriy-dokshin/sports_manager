@@ -1,5 +1,6 @@
 from markdown_strings import esc_format
 
+import re
 import unicodedata
 
 def try_parse_int(x, default=None):
@@ -22,7 +23,9 @@ def get_full_name(player):
 
 
 def get_username(player, silent):
-    username = player["username"]
+    username = player["custom_name"]
+    if not username:
+        username = player["username"]
     if not username:
         username = get_full_name(player)
     if silent:
@@ -30,3 +33,7 @@ def get_username(player, silent):
     else:
         username = "[{}](tg://user?id={})".format(username, player["id"])
     return username
+
+
+def is_valid_custom_name(custom_name):
+    return len(custom_name) >= 4 and len(custom_name) <= 64 and re.match("^[a-zA-Zа-яА-Я0-9 ]+$", custom_name)
