@@ -252,8 +252,7 @@ class TelegramApp:
                     update.chat_id, "Имя должно содержать только русские и английские буквы, цифры и пробел (длина от 4 до 64 символов)",
                     reply_to_message_id=update.message_id)
                 return
-
-        self.__db.set_custom_name(update.user, custom_name, update.date)
+            self.__db.set_custom_name(update.user, custom_name, update.date)
 
     def __print_players(self, update, players, text):
         i = 1
