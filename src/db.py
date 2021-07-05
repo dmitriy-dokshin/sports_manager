@@ -244,3 +244,16 @@ class Db:
             cnx.commit()
 
         self.__execute([callback])
+
+    def get_player(self, user):
+        result = []
+
+        def callback(cnx, cursor):
+            script = "SELECT * FROM user WHERE id = %(user_id)s"
+            data = {"user_id": user["id"]}
+            cursor.execute(script, data)
+            result.extend(cursor.fetchall())
+
+        self.__execute([callback])
+
+        return result[0] if result else None

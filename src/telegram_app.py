@@ -61,6 +61,7 @@ class TelegramUpdate:
             else:
                 self.data = None
             self.message = callback_query["message"]
+            self.message_id = self.message["message_id"]
             self.chat_id = self.message["chat"]["id"]
             self.date = datetime.now()
             self.user = callback_query["from"]
@@ -136,7 +137,6 @@ class TelegramApp:
             self.__on_update[command + "@" + telegram_bot_name] = handler
 
         self.__admins = set(["da_life", "dmitriy_dokshin"])
-        self.__alert_match_age = False
 
         with open("bot_help.txt") as f:
             self.__bot_help = f.read()
@@ -200,12 +200,6 @@ class TelegramApp:
         self.__db.delete_match_schedule(update.chat_id)
 
     def __plus(self, update):
-        if self.__alert_match_age:
-            match_age = self.__db.find_last_match_age(update.chat_id)
-            if match_age and match_age > timedelta(days=7):
-                self.__telegram_api.send_message(
-                    update.chat_id, "Забыли создать новую игру? /new")
-
         number_of_people = None
         if update.data and len(update.data) > 1:
             number_of_people = update.data[1]
@@ -221,13 +215,23 @@ class TelegramApp:
             paid=paid)
 
         if not number_of_people:
-            buttons = []
-            for x in range(1, 5):
-                buttons.append({"text": str(x), "callback_data": json.dumps([update.bot_command, x])})
+            buttons = [{"text": "Только я", "callback_data": json.dumps([update.bot_command, 1])}]
+            for x in range(1, 4):
+                buttons.append({"text": "+" + str(x), "callback_data": json.dumps([update.bot_command, x + 1])})
             reply_markup = {"inline_keyboard": [buttons]}
+            text = "Записал. Если надо, можно указать количество людей с собой"
             self.__telegram_api.send_message(
-                update.chat_id, "Если надо, можно указать количество людей, включая себя",
+                update.chat_id, text,
                 reply_markup=reply_markup,
+                reply_to_message_id=update.message_id)
+        else:
+            player = self.__db.get_player(update.user)
+            username = get_username(player, silent=True)
+            text = "Записал: " + username
+            if number_of_people > 1:
+                text += " и +" + str(number_of_people - 1)
+            self.__telegram_api.send_message(
+                update.chat_id, text,
                 reply_to_message_id=update.message_id)
 
     def __minus(self, update):
