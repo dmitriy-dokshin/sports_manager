@@ -36,4 +36,4 @@ def get_username(player, silent):
 
 
 def is_valid_custom_name(custom_name):
-    return len(custom_name) >= 4 and len(custom_name) <= 64 and re.match("^[a-zA-Zа-яА-Я0-9 ]+$", custom_name)
+    return len(custom_name) >= 4 and len(custom_name) <= 64 and re.match("^[a-zA-Zа-яА-Я0-9_ ]+$", custom_name)

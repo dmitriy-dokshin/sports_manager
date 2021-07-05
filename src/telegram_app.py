@@ -232,6 +232,7 @@ class TelegramApp:
                 text += " и +" + str(number_of_people - 1)
             self.__telegram_api.send_message(
                 update.chat_id, text,
+                parse_mode="markdown",
                 reply_to_message_id=update.message_id)
 
     def __minus(self, update):
