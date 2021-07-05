@@ -254,7 +254,7 @@ class TelegramApp:
             custom_name = " ".join(text_parts[1:]).strip()
             if not is_valid_custom_name(custom_name):
                 self.__telegram_api.send_message(
-                    update.chat_id, "Имя должно содержать только русские и английские буквы, цифры и пробел (длина от 4 до 64 символов)",
+                    update.chat_id, "Имя должно содержать только русские и английские буквы, цифры, знаки _() и пробел (длина от 4 до 64 символов)",
                     reply_to_message_id=update.message_id)
                 return
             self.__db.set_custom_name(update.user, custom_name, update.date)
