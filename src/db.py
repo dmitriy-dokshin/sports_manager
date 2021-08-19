@@ -220,7 +220,7 @@ class Db:
 
         return result
 
-    def get_player_stats(self, chat_id):
+    def get_player_stats(self, chat_id, limit=None):
         result = []
 
         def create_player_stats(cnx, cursor):
@@ -231,7 +231,8 @@ class Db:
             cursor.execute(self.__select_max_matches_count_script)
 
         def select_player_stats(cnx, cursor):
-            cursor.execute(self.__select_player_stats_script)
+            script = self.__select_player_stats_script.format("" if not limit else "\nLIMIT {}".format(limit))
+            cursor.execute(script)
             result.extend(cursor.fetchall())
 
         self.__execute([create_player_stats, select_max_matches_count, select_player_stats])

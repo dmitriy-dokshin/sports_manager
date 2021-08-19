@@ -10,4 +10,4 @@ FROM
     player_stats AS p
     JOIN user AS u ON p.player_id = u.id
 ORDER BY
-    p.matches_count DESC;
+    p.matches_count DESC{};

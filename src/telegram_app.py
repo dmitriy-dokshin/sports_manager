@@ -337,7 +337,7 @@ class TelegramApp:
             update.chat_id, text, parse_mode="markdown")
 
     def __player_stats(self, update):
-        players = self.__db.get_player_stats(update.chat_id)
+        players = self.__db.get_player_stats(update.chat_id, limit=30)
         headers = ["#", "Username", "Имя", "Матчи", "Голоса для опроса"]
         max_lens = [len(x) for x in headers]
         rows = []

@@ -15,7 +15,9 @@ class TelegramApi:
             data["reply_markup"] = reply_markup
         if reply_to_message_id:
             data["reply_to_message_id"] = reply_to_message_id
-        requests.post(self.__base_url + "/sendMessage", json=data)
+        response = requests.post(self.__base_url + "/sendMessage", json=data)
+        if response.status_code != 200:
+            print(response.content)
 
     def get_chat_member(self, chat_id, user_id):
         params = {"chat_id": chat_id, "user_id": user_id}
