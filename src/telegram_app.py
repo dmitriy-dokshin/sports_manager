@@ -278,7 +278,7 @@ class TelegramApp:
 
     def __call_undecided(self, update):
         match_players = set(x["id"] for x in self.__db.list_players(update.chat_id, return_deleted=True))
-        undecided_players = [x for x in self.__db.get_player_stats(update.chat_id) if x["id"] not in match_players]
+        undecided_players = [x for x in self.__db.list_chat_members(update.chat_id) if x["id"] not in match_players]
         text = ""
         inactive_chat_member_statuses = set(["left", "kicked"])
         if undecided_players:

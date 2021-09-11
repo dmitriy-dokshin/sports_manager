@@ -11,12 +11,12 @@ CREATE TEMPORARY TABLE player_stats AS (
                 (
                     SELECT
                         p.match_id,
-                        COUNT(*) AS `count`
+                        SUM(p.number_of_people) AS `count`
                     FROM
                         match_player AS p
                         JOIN `match` AS m ON p.match_id = m.id
                     WHERE
-                        m.chat_id = %(chat_id)s
+                        m.chat_id = %(chat_id)s AND p.deleted_at IS NOT NULL
                     GROUP BY
                         p.match_id
                 ) AS m

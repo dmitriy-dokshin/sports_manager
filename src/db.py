@@ -33,6 +33,8 @@ class Db:
             self.__select_max_matches_count_script = f.read()
         with open("db_scripts/select_player_stats.sql") as f:
             self.__select_player_stats_script = f.read()
+        with open("db_scripts/select_chat_members.sql") as f:
+            self.__select_chat_members_script = f.read()
 
     def __execute(self, callbacks, cursor_args={"dictionary": True}):
         cnx = mysql.connector.connect(**self.__config)
@@ -258,3 +260,15 @@ class Db:
         self.__execute([callback])
 
         return result[0] if result else None
+
+    def list_chat_members(self, chat_id):
+        result = []
+
+        def callback(cnx, cursor):
+            data = {"chat_id": chat_id}
+            cursor.execute(self.__select_chat_members_script, data)
+            result.extend(cursor.fetchall())
+
+        self.__execute([callback])
+
+        return result
