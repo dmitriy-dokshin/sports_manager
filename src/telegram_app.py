@@ -278,16 +278,40 @@ class TelegramApp:
 
     def __call_undecided(self, update):
         match_players = set(x["id"] for x in self.__db.list_players(update.chat_id, return_deleted=True))
-        undecided_players = [x for x in self.__db.list_chat_members(update.chat_id) if x["id"] not in match_players]
-        text = ""
+        chat_members = self.__db.list_chat_members(update.chat_id)
+        undecided_players = [x for x in chat_members if x["id"] not in match_players]
+
+        j = 0
         inactive_chat_member_statuses = set(["left", "kicked"])
+        for i, player in enumerate(undecided_players):
+            chat_member = self.__telegram_api.get_chat_member(update.chat_id, player["id"])
+            player["chat_member"] = chat_member
+            if chat_member and chat_member.get("status") not in inactive_chat_member_statuses:
+                undecided_players[i], undecided_players[j] = undecided_players[j], undecided_players[i]
+                j += 1
+
+        k = j
+        for i in range(j, len(undecided_players)):
+            player = undecided_players[i]
+            chat_member = player["chat_member"]
+            if not chat_member:
+                undecided_players[i], undecided_players[k] = undecided_players[k], undecided_players[i]
+                k += 1
+
+        def add_player(text, player):
+            chat_member = player["chat_member"]
+            username = get_username(player, silent=False)
+            text += " " + username
+            return text
+        text = ""
         if undecided_players:
             text = "Нужно больше людей!"
-            for player in undecided_players:
-                chat_member = self.__telegram_api.get_chat_member(update.chat_id, player["id"])
-                if chat_member and chat_member["status"] not in inactive_chat_member_statuses:
-                    username = get_username(player, silent=False)
-                    text += " " + username
+            for player in undecided_players[:j]:
+                text = add_player(text, player)
+            if j < k:
+                text += "\nВозможно, не в чате:"
+                for player in undecided_players[j:k]:
+                    text = add_player(text, player)
         else:
             text = "Все определились"
         self.__telegram_api.send_message(
