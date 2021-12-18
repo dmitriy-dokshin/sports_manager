@@ -10,7 +10,7 @@ terraform {
 }
 
 provider "yandex" {
-  endpoint  = "api.cloud.yandex.net:443"
+  endpoint  = local.yc.endpoint
   cloud_id  = local.yc.cloud_id
   folder_id = local.yc.folder_id
   zone      = local.yc.zone
