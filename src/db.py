@@ -7,9 +7,10 @@ import os
 class Db:
     def __init__(self):
         self.__config = {
-            "user": "admin",
-            "password": os.environ["DB_ADMIN_PASSWORD"],
-            "host": os.environ["RDS_HOSTNAME"],
+            "host": os.environ["DB_HOST"],
+            "ssl_ca": os.environ["DB_SSL_CA"],
+            "user": os.environ["DB_USER"],
+            "password": os.environ["DB_PASSWORD"],
             "database": "sports_manager",
             "raise_on_warnings": True
         }
