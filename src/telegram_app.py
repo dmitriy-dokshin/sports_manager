@@ -277,6 +277,7 @@ class TelegramApp:
             update.chat_id, text, parse_mode="markdown")
 
     def __call_undecided(self, update):
+        return
         match_players = set(x["id"] for x in self.__db.list_players(update.chat_id, return_deleted=True))
         chat_members = self.__db.list_chat_members(update.chat_id)
         undecided_players = [x for x in chat_members if x["id"] not in match_players]

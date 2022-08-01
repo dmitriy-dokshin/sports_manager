@@ -1,3 +1,4 @@
+import json
 import requests
 import os
 
@@ -15,9 +16,12 @@ class TelegramApi:
             data["reply_markup"] = reply_markup
         if reply_to_message_id:
             data["reply_to_message_id"] = reply_to_message_id
-        response = requests.post(self.__base_url + "/sendMessage", json=data)
+        print("Starting sending message... ", flush=True)
+        print(json.dumps(data), flush=True)
+        response = requests.post(self.__base_url + "/sendMessage", json=data, timeout=5)
+        print("Message sent", flush=True)
         if response.status_code != 200:
-            print(response.content)
+            print(response.content, flush=True)
 
     def get_chat_member(self, chat_id, user_id):
         params = {"chat_id": chat_id, "user_id": user_id}
