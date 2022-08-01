@@ -26,6 +26,7 @@ class Scheduler:
         def sigint_handler():
             for event in self.__cancellation_events.values():
                 event.set()
+
         atexit.register(sigint_handler)
 
     def run(self, key, callback):
@@ -80,6 +81,7 @@ class TelegramUpdate:
             for entity in self.message["entities"]:
                 def get_entity():
                     return self.text[entity["offset"]:][:entity["length"]]
+
                 entity_type = entity["type"]
                 if entity_type == "bot_command":
                     self.bot_command = get_entity()
@@ -205,7 +207,8 @@ class TelegramApp:
     def __plus(self, update):
         plus_commands = ["/plus_2", "/plus_3", "/plus_4"]
         number_of_people = next(
-            (x for x, plus_command in enumerate(plus_commands, start=2) if update.bot_command.startswith(plus_command)), None)
+            (x for x, plus_command in enumerate(plus_commands, start=2) if update.bot_command.startswith(plus_command)),
+            None)
         if not number_of_people and update.bot_command.startswith("/plus"):
             number_of_people = 1
 
@@ -236,7 +239,8 @@ class TelegramApp:
             custom_name = " ".join(text_parts[1:]).strip()
             if not is_valid_custom_name(custom_name):
                 self.__telegram_api.send_message(
-                    update.chat_id, "Имя должно содержать только русские и английские буквы, цифры, знаки _() и пробел (длина от 4 до 64 символов)",
+                    update.chat_id,
+                    "Имя должно содержать только русские и английские буквы, цифры, знаки _() и пробел (длина от 4 до 64 символов)",
                     reply_to_message_id=update.message_id)
                 return
             self.__db.set_custom_name(update.user, custom_name, update.date)
@@ -277,42 +281,20 @@ class TelegramApp:
             update.chat_id, text, parse_mode="markdown")
 
     def __call_undecided(self, update):
-        return
         match_players = set(x["id"] for x in self.__db.list_players(update.chat_id, return_deleted=True))
         chat_members = self.__db.list_chat_members(update.chat_id)
         undecided_players = [x for x in chat_members if x["id"] not in match_players]
 
-        j = 0
-        inactive_chat_member_statuses = set(["left", "kicked"])
-        for i, player in enumerate(undecided_players):
-            chat_member = self.__telegram_api.get_chat_member(update.chat_id, player["id"])
-            player["chat_member"] = chat_member
-            if chat_member and chat_member.get("status") not in inactive_chat_member_statuses:
-                undecided_players[i], undecided_players[j] = undecided_players[j], undecided_players[i]
-                j += 1
-
-        k = j
-        for i in range(j, len(undecided_players)):
-            player = undecided_players[i]
-            chat_member = player["chat_member"]
-            if not chat_member:
-                undecided_players[i], undecided_players[k] = undecided_players[k], undecided_players[i]
-                k += 1
-
-        def add_player(text, player):
-            chat_member = player["chat_member"]
-            username = get_username(player, silent=False)
-            text += " " + username
-            return text
-        text = ""
+        base_text = "Нужно больше людей!"
         if undecided_players:
-            text = "Нужно больше людей!"
-            for player in undecided_players[:j]:
-                text = add_player(text, player)
-            if j < k:
-                text += "\nВозможно, не в чате:"
-                for player in undecided_players[j:k]:
-                    text = add_player(text, player)
+            text = base_text
+            for player in undecided_players:
+                username = get_username(player, silent=False)
+                if len(text + " " + username) > 4096:
+                    self.__telegram_api.send_message(
+                        update.chat_id, text, parse_mode="markdown")
+                    text = base_text
+                text += " " + username
         else:
             text = "Все определились"
         self.__telegram_api.send_message(
@@ -355,8 +337,8 @@ class TelegramApp:
                 text += "\n{}. {}".format(i + 1, player)
             return text
 
-        text = print_team(team1, "Команда 1") + "\n\n" + \
-            print_team(team2, "Команда 2")
+        text = print_team(team1, "Команда 1") + "\n\n" +\
+               print_team(team2, "Команда 2")
 
         self.__telegram_api.send_message(
             update.chat_id, text, parse_mode="markdown")
@@ -394,7 +376,7 @@ class TelegramApp:
         for row in rows:
             final_rows.append(build_row(row))
         final_rows.append(row_delimiter)
-        
+
         text = "```\n{}\n```".format("\n".join(final_rows))
 
         self.__telegram_api.send_message(
