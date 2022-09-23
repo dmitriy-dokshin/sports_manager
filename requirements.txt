@@ -17,7 +17,7 @@ MarkupSafe==1.1.1
 mccabe==0.6.1
 mysql-connector-python==8.0.21
 natsort==7.0.1
-protobuf==3.15.0
+protobuf==3.18.3
 pycodestyle==2.6.0
 pycparser==2.20
 pylint==2.6.0
