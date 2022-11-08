@@ -1,4 +1,6 @@
-CREATE DATABASE IF NOT EXISTS sports_manager;
+CREATE DATABASE IF NOT EXISTS sports_manager
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
 
 USE sports_manager;
 
@@ -19,7 +21,9 @@ CREATE TABLE IF NOT EXISTS `user` (
         NOT NULL,
     updated_at DATETIME
         NULL
-);
+)
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `match` (
     id INT UNSIGNED
@@ -35,7 +39,9 @@ CREATE TABLE IF NOT EXISTS `match` (
     CONSTRAINT UNIQUE KEY (chat_id, created_at),
     CONSTRAINT FOREIGN KEY (owner_id)
         REFERENCES `user` (id)
-);
+)
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `match_schedule` (
     chat_id BIGINT
@@ -46,7 +52,9 @@ CREATE TABLE IF NOT EXISTS `match_schedule` (
         NOT NULL,
     owner_id BIGINT
         NOT NULL
-);
+)
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `match_player` (
     match_id INT UNSIGNED
@@ -68,4 +76,6 @@ CREATE TABLE IF NOT EXISTS `match_player` (
         REFERENCES `match` (id),
     CONSTRAINT FOREIGN KEY (player_id)
         REFERENCES `user` (id)
-);
+)
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;

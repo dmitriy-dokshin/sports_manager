@@ -8,12 +8,13 @@ class Db:
     def __init__(self):
         self.__config = {
             "host": os.environ["DB_HOST"],
-            "ssl_ca": os.environ["DB_SSL_CA"],
             "user": os.environ["DB_USER"],
             "password": os.environ["DB_PASSWORD"],
             "database": "sports_manager",
             "raise_on_warnings": True
         }
+        if "DB_SSL_CA" in os.environ:
+            self.__config["ssl_ca"] = os.environ["DB_SSL_CA"]
         with open("db_scripts/add_or_update_user.sql") as f:
             self.__add_or_update_user_script = f.read()
         with open("db_scripts/plus.sql") as f:
