@@ -27,7 +27,7 @@ requests==2.31.0
 rope==0.18.0
 six==1.15.0
 toml==0.10.1
-urllib3==1.26.17
+urllib3==1.26.18
 uWSGI==2.0.22
 Werkzeug==2.2.3
 wrapt==1.12.1
