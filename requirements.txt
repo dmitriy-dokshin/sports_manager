@@ -6,7 +6,7 @@ chardet==3.0.4
 charset-normalizer==2.0.12
 click==7.1.2
 croniter==0.3.35
-cryptography==40.0.2
+cryptography==42.0.4
 dataclasses==0.8
 Flask==2.0.3
 idna==2.10
