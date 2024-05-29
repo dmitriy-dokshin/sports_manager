@@ -152,6 +152,8 @@ class TelegramApp:
             cron = x["cron"]
             self.__schedule_impl(chat_id, cron)
 
+        print("telegram app started")
+
     def update(self, data):
         update = TelegramUpdate(data)
         if update.bot_command:
