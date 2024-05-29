@@ -43,7 +43,7 @@ class Scheduler:
 
 class TelegramUpdate:
     def __init__(self, data):
-        print(json.dumps(data), flush=True)
+        print("telegram update: {}".format(json.dumps(data)), flush=True)
 
         self.bot_command = None
         self.data = None
