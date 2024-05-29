@@ -1,14 +1,12 @@
 from src.db import Db
 from src.telegram_api import TelegramApi
 from src.util import is_valid_custom_name
-from src.util import try_parse_int
 from src.util import get_full_name
 from src.util import get_username
 
 from concurrent.futures import ThreadPoolExecutor
 from croniter import croniter
 from datetime import datetime
-from datetime import timedelta
 
 import atexit
 import json
@@ -141,7 +139,7 @@ class TelegramApp:
             self.__on_update[command] = handler
             self.__on_update[command + "@" + telegram_bot_name] = handler
 
-        self.__admins = set(["da_life", "dmitriy_dokshin"])
+        self.__admins = set(["da_life", "dmitriy_dokshin", "Dmitriy_Petukhov"])
 
         with open("bot_help.txt") as f:
             self.__bot_help = f.read()
@@ -172,8 +170,8 @@ class TelegramApp:
         def callback(cancellation_event):
             while True:
                 created_at = iter.get_next(datetime)
-                print("Новая игра для чата {} будет создана {}".format(
-                    chat_id, created_at), flush=True)
+                print("Новая игра для чата {} будет создана {}".format(chat_id, created_at), flush=True)
+                self.__telegram_api.send_message(chat_id, "Новая игра будет создана {} (UTC)".format(created_at))
                 t = (created_at - datetime.utcnow()).total_seconds()
                 if cancellation_event.wait(t):
                     break
@@ -337,7 +335,7 @@ class TelegramApp:
                 text += "\n{}. {}".format(i + 1, player)
             return text
 
-        text = print_team(team1, "Команда 1") + "\n\n" +\
+        text = print_team(team1, "Команда 1") + "\n\n" + \
                print_team(team2, "Команда 2")
 
         self.__telegram_api.send_message(
