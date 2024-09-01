@@ -176,13 +176,14 @@ class TelegramApp:
                 self.__telegram_api.send_message(chat_id, "Новая игра будет создана {} (UTC)".format(created_at))
                 t = (created_at - datetime.utcnow()).total_seconds()
                 if cancellation_event.wait(t):
+                    print("Создание игры {} для чата {} отменено".format(chat_id, created_at), flush=True)
                     break
                 else:
                     self.__db.new_game(chat_id, created_at)
                     self.__telegram_api.send_message(
                         chat_id, "Новая игра создана. Записывайтесь!")
 
-        self.__scheduler.run(chat_id, callback)
+        self.__scheduler. run(chat_id, callback)
 
     def __set_schedule(self, update):
         text_parts = update.text.split()
