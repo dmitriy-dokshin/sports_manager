@@ -304,6 +304,9 @@ class TelegramApp:
             text += i18n.not_coming(lang)
             text = self.__print_players(update, minus_players, text)
 
+        if text == "":
+            text = i18n.nobody_is_coming_or_not(lang)
+
         self.__telegram_api.send_message(
             update.chat_id, text, parse_mode="markdown")
 

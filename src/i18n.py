@@ -54,6 +54,11 @@ def not_coming(lang):
         return "Не идут:\n"
     return "Not coming:\n"
 
+def nobody_is_coming_or_not(lang):
+    if lang == RU:
+        return "Никто не отметился"
+    return "Nobody is coming or not"
+
 def we_need_more_people(lang):
     if lang == RU:
         return "Нужно больше людей!"
