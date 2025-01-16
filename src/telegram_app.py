@@ -247,7 +247,7 @@ class TelegramApp:
 
     def __minus(self, update):
         self.__db.minus(
-            update.chat_id, update.date,
+            update.chat_id, update.date, update.user,
             player_ids=update.get_user_ids(),
             usernames=update.get_usernames())
 

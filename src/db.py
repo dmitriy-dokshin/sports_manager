@@ -194,10 +194,11 @@ class Db:
 
         self.__execute([callback])
 
-    def minus(self, chat_id, deleted_at, player_ids=[], usernames=[]):
+    def minus(self, chat_id, deleted_at, user, player_ids=[], usernames=[]):
         def callback(cnx, cursor):
             match_id = self.__find_last_match_id(cursor, chat_id)
             if match_id:
+                self.__add_or_update_user(cursor, user, deleted_at)
                 if usernames:
                     data, param_names = self.__build_list_params(
                         usernames, "username_")
