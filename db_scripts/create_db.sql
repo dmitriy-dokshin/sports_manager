@@ -79,3 +79,16 @@ CREATE TABLE IF NOT EXISTS `match_player` (
 )
     CHARACTER SET utf8mb4
     COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `chat` (
+    chat_id BIGINT
+        NOT NULL
+        PRIMARY KEY,
+    lang VARCHAR(10),
+    updated_at DATETIME
+        NOT NULL,
+    owner_id BIGINT
+        NOT NULL
+)
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;

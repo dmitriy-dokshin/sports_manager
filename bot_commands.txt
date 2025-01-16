@@ -1,19 +1,18 @@
-plus - Плюс
-plus_2 - Плюс 2
-plus_3 - Плюс 3
-plus_4 - Плюс 4
-plus_paid - Плюс и оплатил
-paid - Плюс и оплатил
-minus - Минус
-list - Список
-list_aloud - Список с призывом
-set_name - Указать своё имя
-call_undecided - Призвать неопределившихся
-call_unpaid - Призвать неоплативших
-random_teams - Сгенерировать две случайные команды
-new - Новая игра
-set_schedule - Установить расписание создания новых игр
-delete_schedule - Удалить расписание создания новых игр
-player_stats - Статистика игроков
-help - Общее описание команд
-help_admin - Описание команд администратора
+plus - coming
+plus_2 - coming (2 in total)
+plus_3 - coming (3 in total)
+plus_4 - coming (4 in total)
+plus_paid - coming and paid
+paid - coming and paid
+minus - not coming
+list - list last match players
+list_aloud - list and mention
+set_name - set your name
+call_undecided - mention undecided
+call_unpaid - mention unpaid
+new - create new game
+set_schedule - set schedule
+delete_schedule - delete schedule
+set_lang - set chat lang (en, ru)
+help - help
+help_admin - admin help

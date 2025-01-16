@@ -1,4 +1,5 @@
 from src.db import Db
+from src import i18n
 from src.telegram_api import TelegramApi
 from src.util import is_valid_custom_name
 from src.util import get_full_name
@@ -116,6 +117,7 @@ class TelegramApp:
         on_update = {
             "/new": self.__new_game,
             "/set_schedule": self.__set_schedule,
+            "/set_lang": self.__set_lang,
             "/delete_schedule": self.__delete_schedule,
             "/plus": self.__plus,
             "/plus_2": self.__plus,
@@ -141,9 +143,9 @@ class TelegramApp:
 
         self.__admins = set(["da_life", "dmitriy_dokshin", "Dmitriy_Petukhov"])
 
-        with open("bot_help.txt") as f:
+        with open("bot_help_ru.txt") as f:
             self.__bot_help = f.read()
-        with open("bot_help_admin.txt") as f:
+        with open("bot_help_admin_ru.txt") as f:
             self.__bot_help_admin = f.read()
 
         self.__scheduler = Scheduler()
@@ -183,7 +185,7 @@ class TelegramApp:
                     self.__telegram_api.send_message(
                         chat_id, "Новая игра создана. Записывайтесь!")
 
-        self.__scheduler. run(chat_id, callback)
+        self.__scheduler.run(chat_id, callback)
 
     def __set_schedule(self, update):
         text_parts = update.text.split()
@@ -200,6 +202,21 @@ class TelegramApp:
         else:
             self.__telegram_api.send_message(
                 update.chat_id, "С указанным cron выражением что-то не так")
+
+    def __set_lang(self, update):
+        current_lang = self.__db.get_lang(update.chat_id)
+
+        text_parts = update.text.split()
+        lang = None
+        if len(text_parts) > 1:
+            lang = " ".join(text_parts[1:])
+
+        if not i18n.is_supported_lang(lang):
+            self.__telegram_api.send_message(update.chat_id, i18n.invalid_lang(current_lang))
+        else:
+            self.__db.set_lang(update.chat_id, lang, update.user, update.date)
+            current_lang = self.__db.get_lang(update.chat_id)
+            self.__telegram_api.send_message(update.chat_id, i18n.set_lang_success(current_lang))
 
     def __delete_schedule(self, update):
         self.__scheduler.cancel(update.chat_id)

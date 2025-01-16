@@ -27,6 +27,8 @@ class Db:
             self.__list_players_script = f.read()
         with open("db_scripts/find_last_match.sql") as f:
             self.__find_last_match_script = f.read()
+        with open("db_scripts/update_chat.sql") as f:
+            self.__update_chat_script = f.read()
         with open("db_scripts/update_match_schedule.sql") as f:
             self.__update_match_schedule_script = f.read()
         with open("db_scripts/create_player_stats.sql") as f:
@@ -126,6 +128,33 @@ class Db:
             cnx.commit()
 
         self.__execute([callback])
+
+    def set_lang(self, chat_id, lang, user, updated_at):
+        def callback(cnx, cursor):
+            self.__add_or_update_user(cursor, user, updated_at)
+            data = {
+                "chat_id": chat_id,
+                "lang": lang,
+                "updated_at": updated_at,
+                "owner_id": user["id"]
+            }
+            cursor.execute(self.__update_chat_script, data)
+            cnx.commit()
+
+        self.__execute([callback])
+
+    def get_lang(self, chat_id):
+        result = []
+
+        def callback(cnx, cursor):
+            script = "SELECT * FROM chat WHERE chat_id = %(chat_id)s"
+            data = {"chat_id": chat_id}
+            cursor.execute(script, data)
+            result.extend(cursor.fetchall())
+
+        self.__execute([callback])
+
+        return result[0]["lang"] if result else None
 
     def delete_match_schedule(self, chat_id):
         def callback(cnx, cursor):
