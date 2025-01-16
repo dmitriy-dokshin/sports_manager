@@ -1,0 +1,8 @@
+/new - Create a new game
+/schedule <cron> - Set game schedule  (UTC). For example, "/schedule 30 18 * * 2" - https://crontab.guru
+/delete_schedule - Remove game schedule
+/list - Show last game players
+/list_aloud - Show and mention last game players
+/call_undecided - Mention undecided players among those who came before
+/call_unpaid - Mention those who unpaid
+/minus @ (can specify multiple) - mark persons who are not coming

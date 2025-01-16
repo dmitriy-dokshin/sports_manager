@@ -144,9 +144,13 @@ class TelegramApp:
         self.__admins = set(["da_life", "dmitriy_dokshin", "Dmitriy_Petukhov"])
 
         with open("bot_help_ru.txt") as f:
-            self.__bot_help = f.read()
+            self.__bot_help_ru = f.read()
+        with open("bot_help_en.txt") as f:
+            self.__bot_help_en = f.read()
         with open("bot_help_admin_ru.txt") as f:
-            self.__bot_help_admin = f.read()
+            self.__bot_help_admin_ru = f.read()
+        with open("bot_help_admin_en.txt") as f:
+            self.__bot_help_admin_en = f.read()
 
         self.__scheduler = Scheduler()
         for x in self.__db.get_match_schedules():
@@ -401,7 +405,15 @@ class TelegramApp:
             update.chat_id, text, parse_mode="markdown")
 
     def __help(self, update):
-        self.__telegram_api.send_message(update.chat_id, self.__bot_help)
+        current_lang = self.__db.get_lang(update.chat_id)
+        text = self.__bot_help_en
+        if current_lang == i18n.RU:
+            text = self.__bot_help_ru
+        self.__telegram_api.send_message(update.chat_id, text)
 
     def __help_admin(self, update):
-        self.__telegram_api.send_message(update.chat_id, self.__bot_help_admin)
+        current_lang = self.__db.get_lang(update.chat_id)
+        text = self.__bot_help_admin_en
+        if current_lang == i18n.RU:
+            text = self.__bot_help_admin_ru
+        self.__telegram_api.send_message(update.chat_id, text)
