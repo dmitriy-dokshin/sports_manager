@@ -173,13 +173,15 @@ class TelegramApp:
             self.__db.new_game(update.chat_id, update.date, update.user)
 
     def __schedule_impl(self, chat_id, cron):
+        lang = self.__db.get_lang(chat_id)
+
         iter = croniter(cron, datetime.utcnow())
 
         def callback(cancellation_event):
             while True:
                 created_at = iter.get_next(datetime)
                 print("Новая игра для чата {} будет создана {}".format(chat_id, created_at), flush=True)
-                self.__telegram_api.send_message(chat_id, "Новая игра будет создана {} (UTC)".format(created_at))
+                self.__telegram_api.send_message(chat_id, i18n.new_game_will_be_created(lang).format(created_at))
                 t = (created_at - datetime.utcnow()).total_seconds()
                 if cancellation_event.wait(t):
                     print("Создание игры {} для чата {} отменено".format(chat_id, created_at), flush=True)
@@ -187,11 +189,12 @@ class TelegramApp:
                 else:
                     self.__db.new_game(chat_id, created_at)
                     self.__telegram_api.send_message(
-                        chat_id, "Новая игра создана. Записывайтесь!")
+                        chat_id, i18n.new_game_created(lang))
 
         self.__scheduler.run(chat_id, callback)
 
     def __set_schedule(self, update):
+        lang = self.__db.get_lang(update.chat_id)
         text_parts = update.text.split()
         cron = None
         if len(text_parts) > 1:
@@ -205,7 +208,7 @@ class TelegramApp:
                 update.chat_id, cron, update.user, update.date)
         else:
             self.__telegram_api.send_message(
-                update.chat_id, "С указанным cron выражением что-то не так")
+                update.chat_id, i18n.invalid_schedule(lang), reply_to_message_id=update.message_id)
 
     def __set_lang(self, update):
         current_lang = self.__db.get_lang(update.chat_id)
@@ -255,19 +258,20 @@ class TelegramApp:
             usernames=update.get_usernames())
 
     def __set_name(self, update):
+        lang = self.__db.get_lang(update.chat_id)
         text_parts = update.text.split()
-        custom_name = None
         if len(text_parts) > 1:
             custom_name = " ".join(text_parts[1:]).strip()
             if not is_valid_custom_name(custom_name):
                 self.__telegram_api.send_message(
                     update.chat_id,
-                    "Имя должно содержать только русские и английские буквы, цифры, знаки _() и пробел (длина от 4 до 64 символов)",
+                    i18n.invalid_name(lang),
                     reply_to_message_id=update.message_id)
                 return
             self.__db.set_custom_name(update.user, custom_name, update.date)
 
     def __print_players(self, update, players, text):
+        lang = self.__db.get_lang(update.chat_id)
         i = 1
         for player in players:
             number_of_people = player["number_of_people"]
@@ -278,36 +282,38 @@ class TelegramApp:
                 if number_of_people > 1:
                     row += " #{}".format(j + 1)
                 if player["paid"]:
-                    row += " (оплатил)"
+                    row += i18n.paid(lang)
                 text += row + "\n"
             i += number_of_people
         return text
 
     def __list(self, update):
+        lang = self.__db.get_lang(update.chat_id)
         players = self.__db.list_players(update.chat_id, return_deleted=True)
         text = ""
 
         plus_players = [x for x in players if not x["deleted_at"]]
         if plus_players:
-            text += "Идут:\n"
+            text += i18n.coming(lang)
             text = self.__print_players(update, plus_players, text)
 
         minus_players = [x for x in players if x["deleted_at"]]
         if minus_players:
             if plus_players:
                 text += "\n"
-            text += "Не идут:\n"
+            text += i18n.not_coming(lang)
             text = self.__print_players(update, minus_players, text)
 
         self.__telegram_api.send_message(
             update.chat_id, text, parse_mode="markdown")
 
     def __call_undecided(self, update):
+        lang = self.__db.get_lang(update.chat_id)
         match_players = set(x["id"] for x in self.__db.list_players(update.chat_id, return_deleted=True))
         chat_members = self.__db.list_chat_members(update.chat_id)
         undecided_players = [x for x in chat_members if x["id"] not in match_players]
 
-        base_text = "Нужно больше людей!"
+        base_text = i18n.we_need_more_people(lang)
         if undecided_players:
             text = base_text
             for player in undecided_players:
@@ -318,25 +324,27 @@ class TelegramApp:
                     text = base_text
                 text += " " + username
         else:
-            text = "Все определились"
+            text = i18n.no_more_undecided(lang)
         self.__telegram_api.send_message(
             update.chat_id, text, parse_mode="markdown")
 
     def __call_unpaid(self, update):
+        lang = self.__db.get_lang(update.chat_id)
         players = self.__db.list_players(update.chat_id)
         unpaid_players = [x for x in players if not x["paid"]]
         text = ""
         if unpaid_players:
-            text = "Нужно больше золота!"
+            text = i18n.we_need_more_gold(lang)
             for player in unpaid_players:
                 username = get_username(player, silent=False)
                 text += " " + username
         else:
-            text = "Все оплатили"
+            text = i18n.everyone_paid(lang)
         self.__telegram_api.send_message(
             update.chat_id, text, parse_mode="markdown")
 
     def __random_teams(self, update):
+        lang = self.__db.get_lang(update.chat_id)
         players = self.__db.list_players(update.chat_id)
         random.shuffle(players)
         team1 = []
@@ -359,15 +367,16 @@ class TelegramApp:
                 text += "\n{}. {}".format(i + 1, player)
             return text
 
-        text = print_team(team1, "Команда 1") + "\n\n" + \
-               print_team(team2, "Команда 2")
+        text = print_team(team1, i18n.team_1(lang)) + "\n\n" + \
+               print_team(team2, i18n.team_2(lang))
 
         self.__telegram_api.send_message(
             update.chat_id, text, parse_mode="markdown")
 
     def __player_stats(self, update):
+        lang = self.__db.get_lang(update.chat_id)
         players = self.__db.get_player_stats(update.chat_id, limit=30)
-        headers = ["#", "Username", "Имя", "Матчи", "Голоса для опроса"]
+        headers = ["#", "Username", i18n.name(lang), i18n.games(lang), i18n.votes(lang)]
         max_lens = [len(x) for x in headers]
         rows = []
         i = 1

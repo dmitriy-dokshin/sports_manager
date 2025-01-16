@@ -14,5 +14,7 @@ new - create new game
 set_schedule - set schedule
 delete_schedule - delete schedule
 set_lang - set chat lang (en, ru)
+random_teams - generate random teams
+player_stats - show player stats
 help - help
 help_admin - admin help
